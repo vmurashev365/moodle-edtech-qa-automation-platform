@@ -9,6 +9,16 @@ Phase 3 adds the first executable automation skeleton: Cucumber, Playwright, Typ
 
 Most Moodle UI workflows are still tagged `@wip` until selectors and Moodle Web Services are verified against the controlled instance. The skeleton does not claim that full E2E/API/UI coverage is implemented yet.
 
+## Phase 4 local smoke status
+Phase 4 adds the first real local controlled-Moodle smoke path:
+
+- start Moodle with Docker Compose
+- wait until the local Moodle URL is reachable
+- open the controlled Moodle login page
+- assert the login form is visible
+
+Teacher/student users, course, assignment, submission, grade, and the first real teacher workflow remain Phase 5 scope unless provisioned manually.
+
 ## Planned technology stack
 - Playwright
 - TypeScript
@@ -19,6 +29,8 @@ Most Moodle UI workflows are still tagged `@wip` until selectors and Moodle Web 
 
 ## Controlled Moodle instance approach
 Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. Mount Orange Moodle demo is recon-only and must not be used as the CI target.
+
+The local Docker Compose file uses configurable Moodle and database image variables. The default images are intended for local portfolio validation only; pin or mirror approved images before treating the stack as long-lived infrastructure.
 
 ## Planned user roles
 - teacher
@@ -71,9 +83,10 @@ cp .env.example .env
 Start or stop the local controlled Moodle stack:
 
 ```bash
-npm run docker:start
-npm run docker:stop
-npm run docker:reset
+npm run moodle:start
+npm run moodle:wait
+npm run test:local:smoke
+npm run moodle:stop
 ```
 
 Validate the skeleton:
@@ -91,6 +104,8 @@ npm run test:wip
 ```
 
 `@wip` scenarios are expected to fail with explicit pending implementation messages until Moodle selectors and API functions are confirmed.
+
+GitHub Actions currently runs static/skeleton validation and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 
 ## Why this matters for EdTech teams
 Teacher workflows (assignment lifecycle, grading, gradebook reconciliation) are directly tied to student outcomes. Detecting regressions early and proving gradebook integrity protects learners and institutional reporting.
@@ -127,7 +142,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: current UI and E2E scenarios are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until the first real controlled Moodle run is published.
+Note: current UI and E2E workflows beyond the login smoke are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published.
 
 ---
-Last updated: Phase 3 (automation skeleton and controlled Moodle setup)
+Last updated: Phase 4 (controlled Moodle login smoke)

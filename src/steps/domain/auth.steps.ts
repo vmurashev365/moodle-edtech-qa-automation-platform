@@ -1,5 +1,6 @@
-import { Given } from '@cucumber/cucumber';
-import { Then, When } from '@cucumber/cucumber';
+import { Given, Then, When } from '@cucumber/cucumber';
+import { LoginPage } from '../../pages/auth/LoginPage';
+import type { MoodleWorld } from '../../support/custom-world';
 import { pendingImplementation } from '../../utils/assertions';
 
 Given('teacher {string} is signed in', async function (username: string) {
@@ -10,6 +11,26 @@ Given('teacher {string} is signed in', async function (username: string) {
 Given('student {string} is signed in', async function (username: string) {
   void username;
   pendingImplementation('controlled Moodle selectors not verified yet for student sign-in.');
+});
+
+Given('the controlled Moodle instance is available', async function (this: MoodleWorld) {
+  const response = await fetch(this.env.baseUrl, {
+    redirect: 'follow'
+  });
+
+  if (!response.ok) {
+    throw new Error(`Controlled Moodle is not reachable at ${this.env.baseUrl}; status ${response.status}.`);
+  }
+});
+
+When('I open the Moodle login page', async function (this: MoodleWorld) {
+  const loginPage = new LoginPage(this.requirePage());
+  await loginPage.open();
+});
+
+Then('the Moodle login form should be visible', async function (this: MoodleWorld) {
+  const loginPage = new LoginPage(this.requirePage());
+  await loginPage.expectLoginFormVisible();
 });
 
 When('the student attempts to open teacher-only grading for {string}', async function (assignmentName: string) {

@@ -11,4 +11,8 @@ export abstract class BasePage {
   async gotoPath(path: string): Promise<void> {
     await this.page.goto(path);
   }
+
+  async waitForReady(): Promise<void> {
+    await this.page.waitForLoadState('domcontentloaded');
+  }
 }

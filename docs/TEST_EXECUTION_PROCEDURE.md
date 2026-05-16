@@ -1,9 +1,9 @@
 # Test Execution Procedure
 
 ## Purpose
-This document explains how to run the Phase 3 automation skeleton locally and in CI.
+This document explains how to run the automation skeleton, the Phase 4 local Moodle smoke, and CI-safe checks.
 
-The current framework is executable, but most Moodle UI workflows remain tagged `@wip` until controlled Moodle selectors and Web Service functions are verified.
+The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Broader Moodle UI workflows remain tagged `@wip` until controlled Moodle selectors, users, course data, and Web Service functions are verified.
 
 ## Local Setup
 Use Node.js `24.x` to match the repository engine and GitHub Actions configuration.
@@ -44,22 +44,36 @@ The API token may be blank during skeleton validation. API mutation and backend 
 Start the local controlled Moodle stack:
 
 ```bash
-npm run docker:start
+npm run moodle:start
+```
+
+Wait until Moodle is reachable:
+
+```bash
+npm run moodle:wait
 ```
 
 Stop it:
 
 ```bash
-npm run docker:stop
+npm run moodle:stop
 ```
 
 Reset volumes and start again:
 
 ```bash
-npm run docker:reset
+npm run moodle:reset
+```
+
+Inspect logs:
+
+```bash
+npm run moodle:logs
 ```
 
 The Docker image may still require Moodle admin setup, role configuration, course creation, Web Services enablement, and test-data seeding after the containers are running.
+
+The default Docker images are configurable through `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`. They are intended for local controlled validation; pin or mirror approved images before relying on the stack long term.
 
 ## Static Validation
 Run TypeScript validation:
@@ -81,6 +95,12 @@ Safe skeleton API preflight:
 npm run test:api
 ```
 
+First real local controlled-Moodle smoke:
+
+```bash
+npm run test:local:smoke
+```
+
 Suite commands prepared for later implementation:
 
 ```bash
@@ -93,6 +113,8 @@ npm run test:all
 ```
 
 The commands above exclude `@wip`. Until real Moodle selectors and API helpers are implemented, most UI suites may select no executable scenarios.
+
+`test:local:smoke` requires the local controlled Moodle instance to be running and reachable. It does not require teacher/student/course/assignment provisioning.
 
 ## WIP / Pending Behavior
 Run WIP scenarios deliberately:
@@ -128,4 +150,4 @@ CI currently validates:
 - safe API preflight scenario
 - report artifact upload
 
-CI does not run WIP Moodle UI flows and does not target Mount Orange. Executable Moodle UI/API regression requires a controlled local or VPS Moodle instance with deterministic data and verified Web Services.
+CI does not run WIP Moodle UI flows, does not run `test:local:smoke`, and does not target Mount Orange. Executable Moodle UI/API regression in CI can be added later after the controlled service setup is stable.

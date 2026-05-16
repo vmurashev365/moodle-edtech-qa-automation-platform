@@ -1,8 +1,9 @@
 export const authSelectors = {
   loginPage: {
-    usernameField: 'pending: username field locator to be verified',
-    passwordField: 'pending: password field locator to be verified',
-    submitAction: 'pending: login action locator to be verified',
-    loggedInSignal: 'pending: logged-in user signal to be verified'
+    usernameField: 'input[name="username"]',
+    passwordField: 'input[name="password"]',
+    submitAction: 'button[type="submit"], input[type="submit"]',
+    loginForm: 'form#login, form[action*="/login/index.php"]',
+    loggedInSignal: 'pending: dashboard or user-menu marker to be verified after login'
   }
 } as const;

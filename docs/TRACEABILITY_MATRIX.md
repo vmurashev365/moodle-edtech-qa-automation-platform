@@ -55,11 +55,14 @@ Automation status values:
 - Ready for implementation
 - Blocked by environment
 - Future expansion
+- Ready for local validation
+- Implemented locally
 
 ## Traceability Table
 
 | ID | Requirement / business contract | Related risk ID(s) | Planned test scenario | Test layer | Priority | Automation status | Evidence target |
 |---|---|---|---|---|---|---|---|
+| REQ-AUTH-000 | Controlled Moodle login page is reachable before deeper workflow execution. | R11 | Open the local controlled Moodle login page and verify the login form is visible. | Local smoke, UI check | P0 | Implemented locally | Allure test case, screenshot on failure |
 | REQ-AUTH-001 | Teacher can authenticate and reach the Moodle start state for assigned work. | R1, R9 | Teacher logs in and lands on a session-ready dashboard. | UI check, API precheck | P0 | Designed | Allure test case, screenshot on failure |
 | REQ-DASH-001 | Teacher dashboard shows the assigned course and actionable learning work. | R1, R8, R9 | Teacher dashboard lists `QA Automation Demo 101` and links to active course work. | UI check, API reconciliation | P1 | Designed | Allure test case, API response attachment |
 | REQ-COURSE-001 | Teacher can open the assigned course from the dashboard or course navigation. | R1 | Teacher opens `QA Automation Demo 101` and sees the expected course context. | UI check, API check | P0 | Designed | Allure test case, trace/video on failure |
@@ -102,7 +105,8 @@ Planned Phase 2 design coverage:
 | Phase 1 | Define business scope, risk model, test plan, and methodology transfer. | Complete |
 | Phase 2 | Design traceability, data strategy, BDD architecture, and API coverage. | This document |
 | Phase 3 | Create Cucumber/Playwright/TypeScript skeleton, controlled Moodle setup contract, feature files, page object placeholders, API helper skeleton, CI validation, and local execution commands. | Skeleton created; implementation pending |
-| Phase 4 | Implement verified E2E/API/UI/security/media checks, Allure evidence, demo video, public report link, and broader Moodle regression depth. | Future expansion |
+| Phase 4 | Implement the first controlled Moodle readiness/login smoke and document local execution. | Implemented locally; public evidence TBD |
+| Phase 5 | Provision controlled users/course/assignment/submission/grade and implement the first real teacher workflow. | Future expansion |
 
 ## Known Gaps / Future Expansion
 - Exact Moodle Web Service functions must be confirmed against the configured controlled Moodle instance during Phase 3.

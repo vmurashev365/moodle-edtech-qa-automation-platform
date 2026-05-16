@@ -1,6 +1,6 @@
 services:
   mariadb:
-    image: bitnami/mariadb:11.4
+    image: ${MARIADB_DOCKER_IMAGE:-bitnamilegacy/mariadb:11.4}
     environment:
       ALLOW_EMPTY_PASSWORD: "no"
       MARIADB_ROOT_PASSWORD: ${MOODLE_DB_ROOT_PASSWORD:-changeme}
@@ -16,7 +16,7 @@ services:
       retries: 10
 
   moodle:
-    image: bitnami/moodle:4.5
+    image: ${MOODLE_DOCKER_IMAGE:-bitnamilegacy/moodle:latest}
     depends_on:
       mariadb:
         condition: service_healthy

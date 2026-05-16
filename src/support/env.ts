@@ -17,6 +17,7 @@ export interface TestEnv {
   assignmentName: string;
   audioResourceName: string;
   targetGrade: number;
+  readyTimeoutMs: number;
   headless: boolean;
   traceOnFailure: boolean;
   videoOnFailure: boolean;
@@ -70,6 +71,7 @@ export function loadEnv(): TestEnv {
     assignmentName: readEnv('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy'),
     audioResourceName: readEnv('MOODLE_AUDIO_RESOURCE_NAME', 'Sample Listening Task'),
     targetGrade: readNumber('MOODLE_TARGET_GRADE', 82),
+    readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
     headless: readBoolean('HEADLESS', true),
     traceOnFailure: readBoolean('TRACE_ON_FAILURE', true),
     videoOnFailure: readBoolean('VIDEO_ON_FAILURE', false)
@@ -134,6 +136,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       assignmentName: env.assignmentName,
       audioResourceName: env.audioResourceName,
       targetGrade: env.targetGrade,
+      readyTimeoutMs: env.readyTimeoutMs,
       apiTokenConfigured: Boolean(env.apiToken),
       headless: env.headless,
       traceOnFailure: env.traceOnFailure,

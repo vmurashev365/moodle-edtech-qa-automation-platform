@@ -122,3 +122,15 @@ Phase 3 should implement the smallest useful data helper layer first:
 - Gradebook reconciliation.
 
 If the controlled environment cannot support API mutation immediately, Phase 3 may begin with API validation plus documented manual seed preparation, with mutation helpers added after Web Services are configured.
+
+## Phase 4 / Phase 5 Provisioning Note
+Phase 4 introduces a local login-page smoke that verifies Moodle reachability and the login form only. It does not require seeded teacher/student users, course, assignment, submission, or grade data.
+
+Phase 5 should provision and verify:
+
+- controlled teacher, student, and manager/admin users
+- `QA Automation Demo 101`
+- `Essay: Test Automation Strategy`
+- deterministic student submission
+- `82 / 100` grade baseline
+- Moodle Web Services needed for setup, teardown, and backend validation

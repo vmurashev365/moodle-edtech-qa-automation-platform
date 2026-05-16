@@ -14,8 +14,9 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - 3–5 minute walkthrough: TBD
 
 ## Moodle evidence
-- Controlled Moodle setup (seeded instance): TBD
-- Mount Orange recorder findings: planned for Phase 3 (recon-only)
+- Controlled Moodle setup (seeded instance): Docker Compose available; seeded users/course/assignment TBD
+- Phase 4 local login smoke evidence: passed locally; public report/screenshot link TBD
+- Mount Orange recorder findings: planned only for recon, not CI
 - First E2E scenario: TBD
 - First API coverage: TBD
 
@@ -25,7 +26,12 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Docker compose controlled Moodle stack: Ready for local setup; Moodle admin/Web Services configuration still TBD
 - Safe API preflight scenario: Ready for environment-contract validation
 - WIP UI/E2E/security/media scenarios: Pending selector and Web Service verification
-- GitHub Actions skeleton validation: Ready; public run link TBD
+- GitHub Actions skeleton validation: Ready; see Live reports entry
+
+## Phase 4 local smoke
+- Controlled Moodle wait script: Ready
+- Local login page smoke: Passed locally with `npm run test:local:smoke`
+- Teacher/student/course/assignment provisioning: Phase 5
 
 ## Phase 2 design artifacts
 - [Traceability Matrix](TRACEABILITY_MATRIX.md): Ready
