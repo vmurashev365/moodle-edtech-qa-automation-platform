@@ -2,11 +2,11 @@
 
 These are portfolio implementations demonstrating QA methodology transferability across structurally different domains.
 
-| Portfolio implementation | Domain | Controlled platform | Core workflows | Main risks covered | Shared QA methodology |
-|---|---|---|---|---|---|
-| Acme Linens Demo Store | E-commerce | Demo store / Shopify | Release gate, cart, checkout, pricing integrity | Checkout breakage, pricing errors | Risk analysis, controlled env, BDD Lego Steps, API/UI validation |
-| Hora Services Logistics QA Platform | Logistics | Odoo Community (demo) | Order lifecycle, routing, tracking, compliance checks | Routing errors, data loss | Risk analysis, controlled env, BDD Lego Steps, API/UI validation |
-| Moodle Teacher QA | EdTech / LMS | Controlled Moodle instance (Docker / VPS) | Teacher dashboard, assignment lifecycle, grading, gradebook | Grading loss, permission issues | Risk analysis, controlled env, BDD Lego Steps, API/UI validation |
+| Portfolio implementation | Repository | Domain | Controlled platform | Core workflows | Main risks covered | Shared QA methodology |
+|---|---|---|---|---|---|---|
+| [Acme Linens Demo Store](https://github.com/vmurashev365/victor-murashev-storefront-qa-demo) | `victor-murashev-storefront-qa-demo` | E-commerce | Own Shopify demo store | Release gate, cart, checkout, pricing integrity | Checkout breakage, pricing errors, cart/checkout continuity issues | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation |
+| [Hora Services Logistics QA Platform](https://github.com/vmurashev365/logistics-qa-automation-platform) | `logistics-qa-automation-platform` | Logistics / ERP | Odoo Community demo/testbed | Fleet, HOS/ELD, IFTA/finance, inspections, offline sync, CTI | Compliance drift, fleet data errors, offline sync issues, integration failures | Risk analysis, controlled environment, BDD Lego Steps, API/UI/DB validation |
+| [Moodle Teacher QA](https://github.com/vmurashev365/moodle-edtech-qa-automation-platform) | `moodle-edtech-qa-automation-platform` | EdTech / LMS | Controlled Moodle instance (Docker / VPS) | Teacher dashboard, assignment lifecycle, grading, gradebook | Grading loss, permission issues, reporting drift | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation |
 
 Shared methodology (core)
 1. Domain risk analysis
@@ -26,4 +26,4 @@ What changes by domain
 - risk model priority
 
 Why this matters for a Senior QA Automation role
-This work demonstrates that the candidate is not only writing tests but building repeatable, domain-specific QA platforms that scale across contexts. The Senior QA Architect designs the step library, governance, and evidence model so other teams can reliably repeat and extend the work.
+This approach demonstrates not just test-writing skill, but the ability to build repeatable, domain-specific QA platforms that teams can extend and maintain. The Senior QA Architect role is to own the step library, governance model, and evidence pipeline so others can reliably scale the work.
