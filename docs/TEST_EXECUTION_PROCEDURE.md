@@ -6,6 +6,8 @@ This document explains how to run the Phase 3 automation skeleton locally and in
 The current framework is executable, but most Moodle UI workflows remain tagged `@wip` until controlled Moodle selectors and Web Service functions are verified.
 
 ## Local Setup
+Use Node.js `24.x` to match the repository engine and GitHub Actions configuration.
+
 Install dependencies:
 
 ```bash

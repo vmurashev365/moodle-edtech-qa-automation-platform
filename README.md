@@ -54,6 +54,8 @@ Tests are intended to run against a controlled Moodle instance (local Docker or 
 - [docs/TEST_EXECUTION_PROCEDURE.md](docs/TEST_EXECUTION_PROCEDURE.md)
 
 ## Local setup and commands
+Use Node.js `24.x` for local development and CI.
+
 Install dependencies:
 
 ```bash
