@@ -88,6 +88,8 @@ Phase 3 API helpers should own:
 If mutation APIs are not available at first, document the manual seed baseline and use read-only API reconciliation until Web Services are enabled.
 
 ## Phase 3 Implementation Notes
+- The Phase 3 skeleton includes a generic Moodle client, environment validation, and a safe API preflight scenario.
+- Moodle-specific helper methods remain pending until Web Service function names and permissions are confirmed.
 - Do not hardcode Moodle Web Service function names until confirmed.
 - Keep API helpers separate from Page Objects.
 - Attach important API responses to Allure for failed or high-risk scenarios.

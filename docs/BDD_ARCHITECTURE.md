@@ -160,7 +160,7 @@ Avoid these patterns:
 - Any AI-assisted step implementation in Phase 3 should include a short PR note describing the prompt and acceptance criteria.
 
 ## Phase 3 Implementation Mapping
-Phase 3 should map this design into:
+The Phase 3 skeleton maps this design into:
 
 | Design concept | Phase 3 implementation target |
 |---|---|
@@ -171,4 +171,4 @@ Phase 3 should map this design into:
 | API helpers | Setup, teardown, and canonical state validation. |
 | Evidence hooks | Allure attachments, screenshots on failure, API response attachments, trace/video on failure where enabled. |
 
-Phase 2 stops at design. No automation implementation files are created in this pass.
+The current skeleton provides the structure and pending step contracts. Real Moodle workflow automation remains pending until controlled Moodle selectors and Web Service functions are verified.

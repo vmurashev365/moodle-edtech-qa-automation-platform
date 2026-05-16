@@ -1,9 +1,10 @@
 # Local-only reference implementations
-/_reference_acme_storefront/
-/_reference_hora_logistics/
 /_reference_*/
 
 # Local env / generated evidence
+node_modules/
+dist/
+.npm-cache/
 .env
 .env.*
 !.env.example

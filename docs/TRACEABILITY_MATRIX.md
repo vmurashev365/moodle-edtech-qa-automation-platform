@@ -101,8 +101,8 @@ Planned Phase 2 design coverage:
 |---|---|---|
 | Phase 1 | Define business scope, risk model, test plan, and methodology transfer. | Complete |
 | Phase 2 | Design traceability, data strategy, BDD architecture, and API coverage. | This document |
-| Phase 3 | Implement Cucumber features, step definitions, page objects, API helpers, CI, and Allure evidence. | Planned |
-| Phase 4 | Expand regression depth, negative paths, accessibility smoke, and broader Moodle workflows. | Future expansion |
+| Phase 3 | Create Cucumber/Playwright/TypeScript skeleton, controlled Moodle setup contract, feature files, page object placeholders, API helper skeleton, CI validation, and local execution commands. | Skeleton created; implementation pending |
+| Phase 4 | Implement verified E2E/API/UI/security/media checks, Allure evidence, demo video, public report link, and broader Moodle regression depth. | Future expansion |
 
 ## Known Gaps / Future Expansion
 - Exact Moodle Web Service functions must be confirmed against the configured controlled Moodle instance during Phase 3.

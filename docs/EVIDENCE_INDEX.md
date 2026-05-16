@@ -18,6 +18,14 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - First E2E scenario: TBD
 - First API coverage: TBD
 
+## Phase 3 automation skeleton
+- Cucumber + TypeScript skeleton: Ready locally after dependency install
+- Playwright browser engine inside Cucumber steps: Skeleton ready
+- Docker compose controlled Moodle stack: Ready for local setup; Moodle admin/Web Services configuration still TBD
+- Safe API preflight scenario: Ready for environment-contract validation
+- WIP UI/E2E/security/media scenarios: Pending selector and Web Service verification
+- GitHub Actions skeleton validation: Ready; public run link TBD
+
 ## Phase 2 design artifacts
 - [Traceability Matrix](TRACEABILITY_MATRIX.md): Ready
 - [Test Data Strategy](TEST_DATA_STRATEGY.md): Ready
@@ -39,6 +47,7 @@ These artifacts define planned coverage only. Allure report, GitHub Actions run,
 7. [docs/TEST_DATA_STRATEGY.md](TEST_DATA_STRATEGY.md)
 8. [docs/BDD_ARCHITECTURE.md](BDD_ARCHITECTURE.md)
 9. [docs/API_COVERAGE_MATRIX.md](API_COVERAGE_MATRIX.md)
+10. [docs/TEST_EXECUTION_PROCEDURE.md](TEST_EXECUTION_PROCEDURE.md)
 
 ## Status legend
 - Ready

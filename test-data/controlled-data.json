@@ -1,0 +1,36 @@
+{
+  "users": {
+    "manager": {
+      "username": "manager.qa",
+      "role": "manager/admin"
+    },
+    "teacher": {
+      "username": "teacher.qa",
+      "role": "teacher"
+    },
+    "student": {
+      "username": "student.qa",
+      "role": "student"
+    },
+    "optionalUnenrolledStudent": {
+      "username": "outsider.student.qa",
+      "role": "authenticated user without course enrolment"
+    }
+  },
+  "course": {
+    "name": "QA Automation Demo 101"
+  },
+  "assignment": {
+    "name": "Essay: Test Automation Strategy",
+    "targetGrade": 82,
+    "maximumGrade": 100
+  },
+  "media": {
+    "audioResourceName": "Sample Listening Task"
+  },
+  "notes": [
+    "This file defines stable scenario vocabulary only.",
+    "Final Moodle IDs and Web Service functions must be confirmed against the controlled instance.",
+    "Mount Orange is recon-only and is not a CI target."
+  ]
+}

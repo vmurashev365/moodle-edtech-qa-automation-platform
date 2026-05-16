@@ -1,0 +1,42 @@
+{
+  "name": "moodle-edtech-qa-automation-platform",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Cucumber-first Playwright TypeScript automation skeleton for controlled Moodle teacher workflows.",
+  "scripts": {
+    "test:smoke": "cucumber-js --profile smoke",
+    "test:web": "cucumber-js --profile web",
+    "test:e2e": "cucumber-js --profile e2e",
+    "test:api": "cucumber-js --profile api",
+    "test:security": "cucumber-js --profile security",
+    "test:media": "cucumber-js --profile media",
+    "test:all": "cucumber-js --profile all",
+    "test:wip": "cucumber-js --profile wip",
+    "type-check": "tsc --noEmit",
+    "lint": "tsc --noEmit",
+    "format": "prettier --check .",
+    "report:allure": "allure generate reports/allure-results --clean -o reports/allure-report",
+    "report:allure:open": "allure open reports/allure-report",
+    "clean:reports": "node -e \"const fs=require('fs'); for (const target of ['reports','test-results','allure-results','allure-report','screenshots','videos','traces']) fs.rmSync(target,{recursive:true,force:true});\"",
+    "docker:start": "docker compose up -d",
+    "docker:stop": "docker compose down",
+    "docker:reset": "docker compose down -v && docker compose up -d",
+    "verify:env": "ts-node scripts/verify-env.ts",
+    "seed:placeholder": "ts-node scripts/seed-placeholder.ts",
+    "clean:placeholder": "ts-node scripts/clean-placeholder.ts"
+  },
+  "devDependencies": {
+    "@cucumber/cucumber": "^11.3.0",
+    "@types/node": "^20.17.0",
+    "allure-commandline": "^2.34.1",
+    "allure-cucumberjs": "^3.0.9",
+    "dotenv": "^16.4.7",
+    "playwright": "^1.49.1",
+    "prettier": "^3.4.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
