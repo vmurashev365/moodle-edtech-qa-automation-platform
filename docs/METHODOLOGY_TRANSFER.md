@@ -2,9 +2,10 @@
 
 These are portfolio implementations demonstrating QA methodology transferability across structurally different domains.
 
+This public document references only repository evidence intended to be accessible for review. Private/local reference implementations may be used internally as pattern sources, but they are not listed as public evidence.
+
 | Portfolio implementation | Repository | Domain | Controlled platform | Core workflows | Main risks covered | Shared QA methodology |
 |---|---|---|---|---|---|---|
-| [Acme Linens Demo Store](https://github.com/vmurashev365/victor-murashev-storefront-qa-demo) | `victor-murashev-storefront-qa-demo` | E-commerce | Own Shopify demo store | Release gate, cart, checkout, pricing integrity | Checkout breakage, pricing errors, cart/checkout continuity issues | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation |
 | [Hora Services Logistics QA Platform](https://github.com/vmurashev365/logistics-qa-automation-platform) | `logistics-qa-automation-platform` | Logistics / ERP | Odoo Community demo/testbed | Fleet, HOS/ELD, IFTA/finance, inspections, offline sync, CTI | Compliance drift, fleet data errors, offline sync issues, integration failures | Risk analysis, controlled environment, BDD Lego Steps, API/UI/DB validation |
 | [Moodle Teacher QA](https://github.com/vmurashev365/moodle-edtech-qa-automation-platform) | `moodle-edtech-qa-automation-platform` | EdTech / LMS | Controlled Moodle instance (Docker / VPS) | Teacher dashboard, assignment lifecycle, grading, gradebook | Grading loss, permission issues, reporting drift | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation |
 
@@ -13,7 +14,7 @@ Shared methodology (core)
 2. Controlled test environment (deterministic seed data)
 3. Business-critical workflow mapping (scenarios)
 4. BDD Lego Steps (Atomic → Domain → Composite)
-5. Playwright + TypeScript automation (phase 2)
+5. Playwright + TypeScript automation layer implemented after design approval
 6. API / UI validation and reconciliation checks
 7. Allure / CI evidence publication
 

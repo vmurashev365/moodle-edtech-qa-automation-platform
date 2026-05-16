@@ -1,7 +1,7 @@
 # Test Plan — Lightweight Industry-Standard QA Documentation
 
 Document purpose
-This is a lightweight test plan inspired by common industry-standard test documentation practices, including ISO/IEC/IEEE 29119-3 style structure. It describes scope, objectives, deliverables, environment, data, risks and responsibilities for Phase 1 (MVP) of the Moodle Teacher QA automation platform.
+This is a lightweight test plan inspired by common industry-standard test documentation practices, including ISO/IEC/IEEE 29119-3 style structure. It describes scope, objectives, deliverables, environment, data, risks and responsibilities for the Moodle Teacher QA automation platform.
 
 Test objectives
 - Provide repeatable verification of teacher-centered workflows
@@ -45,9 +45,9 @@ Features not to be tested in MVP
 - Performance beyond basic smoke checks
 
 Test levels
-- Unit (helpers, utilities) — Phase 2
-- Integration (API helpers) — Phase 2
-- System / E2E — Phase 2/3
+- Unit (helpers, utilities) — Phase 3+
+- Integration (API helpers) — Phase 3+
+- System / E2E — Phase 4+
 
 Test types
 - Functional (UI + API)
@@ -70,7 +70,8 @@ Suspension/resumption criteria
 - Suspend runs if controlled host is unavailable > 30 minutes; resume after remediation and test-data reset.
 
 Test deliverables
-- Automation source (features + step implementations) — phase 2
+- Phase 2 test design artifacts: traceability matrix, test data strategy, BDD architecture, API coverage matrix
+- Automation source (features + step implementations) — phase 3+
 - Allure reports from CI runs
 - Evidence index updates
 - Test plan and strategy documents
@@ -94,9 +95,10 @@ Roles and responsibilities
 - Product Owner: review and approve feature definitions
 
 Schedule / phased delivery
-- Phase 1: documentation and evidence index (this deliverable)
-- Phase 2: skeleton automation (features, step-library, API helpers)
-- Phase 3: implement E2E, CI, Allure evidence and demo video
+- Phase 1: documentation foundation and evidence index
+- Phase 2: test design artifacts: traceability, test data strategy, BDD architecture, API coverage matrix
+- Phase 3: automation skeleton and controlled Moodle setup: package/config, Cucumber/Playwright structure, feature files, page objects, API helper skeleton, CI skeleton
+- Phase 4: implemented E2E/API/UI/security/media checks, Allure evidence, demo video, public report link
 
 Approval / completion criteria
 - Stakeholder sign-off on MVP test scope and evidence readiness

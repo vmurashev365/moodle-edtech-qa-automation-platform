@@ -35,11 +35,17 @@ Tests are intended to run against a controlled Moodle instance (local Docker or 
 - smoke
 - regression
 
-## Links (phase 1 docs)
+## Links (docs)
 - [docs/EVIDENCE_INDEX.md](docs/EVIDENCE_INDEX.md)
 - [docs/CLIENT_OVERVIEW.md](docs/CLIENT_OVERVIEW.md)
 - [docs/TEST_PLAN.md](docs/TEST_PLAN.md)
+- [docs/TEST_STRATEGY.md](docs/TEST_STRATEGY.md)
+- [docs/RISK_ANALYSIS.md](docs/RISK_ANALYSIS.md)
 - [docs/METHODOLOGY_TRANSFER.md](docs/METHODOLOGY_TRANSFER.md)
+- [docs/TRACEABILITY_MATRIX.md](docs/TRACEABILITY_MATRIX.md)
+- [docs/TEST_DATA_STRATEGY.md](docs/TEST_DATA_STRATEGY.md)
+- [docs/BDD_ARCHITECTURE.md](docs/BDD_ARCHITECTURE.md)
+- [docs/API_COVERAGE_MATRIX.md](docs/API_COVERAGE_MATRIX.md)
 
 ## Why this matters for EdTech teams
 Teacher workflows (assignment lifecycle, grading, gradebook reconciliation) are directly tied to student outcomes. Detecting regressions early and proving gradebook integrity protects learners and institutional reporting.
@@ -49,7 +55,7 @@ New scenarios can be composed from existing approved Lego Steps without changing
 
 This encourages consistent vocabulary across Product, Manual QA and Automation while keeping the automation implementation manageable and reviewable. It does not mean that non-technical users can create automated tests without engineering support—engineering implements and reviews the approved Lego Steps.
 
-## Planned folder structure (phase 1 — docs only)
+## Planned folder structure (phase 2 — design docs only)
 ```
 / (repo root)
   README.md
@@ -61,13 +67,17 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
     TEST_STRATEGY.md
     RISK_ANALYSIS.md
     METHODOLOGY_TRANSFER.md
-  features/            (feature files — phase 2)
-  src/                 (step implementations, page objects — phase 2)
-  .github/workflows/   (GitHub Actions CI — phase 2)
-  test-data/           (seed data, factories — phase 2)
+    TRACEABILITY_MATRIX.md
+    TEST_DATA_STRATEGY.md
+    BDD_ARCHITECTURE.md
+    API_COVERAGE_MATRIX.md
+  features/            (feature files — phase 3)
+  src/                 (step implementations, page objects — phase 3)
+  .github/workflows/   (GitHub Actions CI — phase 3)
+  test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: folders shown above are planned; phase 1 creates documentation only.
+Note: automation folders shown above are planned; this phase creates design documentation only.
 
 ---
-Last updated: Phase 1 (documentation-first foundation)
+Last updated: Phase 2 (test design artifacts)
