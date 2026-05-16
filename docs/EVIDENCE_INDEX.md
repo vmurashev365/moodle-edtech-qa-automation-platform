@@ -7,7 +7,8 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 ## Live reports
 - Allure report: TBD
-- GitHub Actions run: TBD
+- GitHub Actions run: https://github.com/vmurashev365/moodle-edtech-qa-automation-platform/actions/runs/25970560736
+- CI artifact: phase-3-skeleton-reports
 
 ## Demo video
 - 3–5 minute walkthrough: TBD
