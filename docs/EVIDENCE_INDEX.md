@@ -3,7 +3,7 @@
 Purpose: a concise navigation page for reviewers to find key evidence and artifacts. Many links are placeholders in Phase 1 — marked as TBD.
 
 ## Main repository
-- GitHub repository: TBD
+- GitHub repository: https://github.com/vmurashev365/moodle-edtech-qa-automation-platform
 
 ## Live reports
 - Allure report: TBD

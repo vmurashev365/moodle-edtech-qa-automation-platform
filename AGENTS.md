@@ -23,3 +23,24 @@ Pull request guidance
 
 Versioning and change control
 - Document changes to BDD vocabulary in a changelog entry and update relevant docs and the evidence index.
+
+## Local reference folders
+
+This repository may contain local-only reference folders such as:
+
+- `_reference_acme_storefront/`
+- `_reference_hora_logistics/`
+
+These folders are gitignored and must never be committed.
+
+They are read-only reference implementations used to compare architecture patterns, documentation structure, BDD layering, Allure/CI evidence design and API/UI validation approach.
+
+Rules:
+
+- Do not edit files inside `_reference_*` folders.
+- Do not copy code blindly from reference projects.
+- Extract patterns and adapt them to Moodle / EdTech / LMS requirements.
+- Public documentation must reference external GitHub URLs, not local-only folders.
+- Do not import, require, or depend on code from `_reference_*`.
+- Do not use e-commerce or logistics terminology in Moodle features unless it is part of methodology comparison documentation.
+- Never commit secrets, `.env` files, generated reports, screenshots, videos, traces, HAR files, or local artifacts from reference folders.

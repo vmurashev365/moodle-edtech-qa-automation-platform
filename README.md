@@ -63,7 +63,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
     METHODOLOGY_TRANSFER.md
   features/            (feature files — phase 2)
   src/                 (step implementations, page objects — phase 2)
-  ci/                  (CI config — phase 2)
+  .github/workflows/   (GitHub Actions CI — phase 2)
   test-data/           (seed data, factories — phase 2)
 ```
 

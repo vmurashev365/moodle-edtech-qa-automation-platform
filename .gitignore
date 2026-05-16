@@ -1,3 +1,19 @@
-# Ignore portfolio reference directories
-_reference_hora_logistics
-_reference_acme_storefront
+# Local-only reference implementations
+/_reference_acme_storefront/
+/_reference_hora_logistics/
+/_reference_*/
+
+# Local env / generated evidence
+.env
+.env.*
+!.env.example
+allure-results/
+allure-report/
+test-results/
+playwright-report/
+reports/
+artifacts/
+screenshots/
+videos/
+traces/
+*.har

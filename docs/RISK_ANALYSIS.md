@@ -7,7 +7,7 @@ Purpose: concise, risk-driven table showing business impact, planned automated c
 | R1 | Teacher cannot access assigned course | Teacher cannot grade; students delayed | Critical | Medium | Full (API + E2E) | @e2e @api @security | P0 |
 | R2 | Assignment is not visible or opens incorrectly | Assignments not deliverable to students | High | Medium | Full (UI + API) | @e2e @web @api | P0 |
 | R3 | Student submission is not visible to teacher | Grading blocked; student support tickets | Critical | Low | Full (API + E2E) | @e2e @api | P0 |
-| R4 | Teacher grade is not saved | Grade loss, accreditation risk | Critical | Low | Full (API + E2E) | @e2e @api | P0 |
+| R4 | Teacher grade is not saved | Grade loss, reporting disputes, learner trust impact | Critical | Low | Full (API + E2E) | @e2e @api | P0 |
 | R5 | Student sees wrong grade | Learner trust and reporting issues | High | Medium | API reconciliation checks + E2E spot checks | @api @e2e | P0 |
 | R6 | Gradebook does not match assignment grading action | Reporting inconsistency | High | Medium | API reconciliation and E2E validation | @api @e2e | P0 |
 | R7 | Student can access teacher-only grading page | Privilege escalation and integrity breach | Critical | Low | Security tests + E2E negative tests | @security @e2e | P0 |

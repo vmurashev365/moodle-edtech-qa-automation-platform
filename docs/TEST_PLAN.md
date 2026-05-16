@@ -1,7 +1,7 @@
-# Test Plan — Lightweight (ISO/IEC/IEEE 29119-3 aligned)
+# Test Plan — Lightweight Industry-Standard QA Documentation
 
 Document purpose
-This is a lightweight test plan aligned with ISO/IEC/IEEE 29119-3 documentation principles. It describes scope, objectives, deliverables, environment, data, risks and responsibilities for Phase 1 (MVP) of the Moodle Teacher QA automation platform.
+This is a lightweight test plan inspired by common industry-standard test documentation practices, including ISO/IEC/IEEE 29119-3 style structure. It describes scope, objectives, deliverables, environment, data, risks and responsibilities for Phase 1 (MVP) of the Moodle Teacher QA automation platform.
 
 Test objectives
 - Provide repeatable verification of teacher-centered workflows
