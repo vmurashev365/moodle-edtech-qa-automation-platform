@@ -51,3 +51,5 @@ New scenarios can be composed from existing approved Lego Steps without changing
 This enables Product Owners, Manual QA, and Junior engineers to read and compose scenario definitions using an approved vocabulary while engineering owns test implementation and maintenance.
 
 Do not overclaim: this does not mean non-technical users can fully automate any workflow without engineering support.
+
+For methodology context across implementations: see [docs/METHODOLOGY_TRANSFER.md](METHODOLOGY_TRANSFER.md) and [docs/EVIDENCE_INDEX.md](EVIDENCE_INDEX.md).
