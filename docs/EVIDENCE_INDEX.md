@@ -7,18 +7,19 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 ## Live reports
 - Allure report: TBD
-- GitHub Actions run: https://github.com/vmurashev365/moodle-edtech-qa-automation-platform/actions/runs/25970560736
-- CI artifact: phase-3-skeleton-reports
+- GitHub Actions run: Available in repository Actions tab
+- CI artifact: framework-validation-reports
 
 ## Demo video
 - 3–5 minute walkthrough: TBD
 
 ## Moodle evidence
-- Controlled Moodle setup (seeded instance): Docker Compose available; seeded users/course/assignment TBD
-- Phase 4 local login smoke evidence: passed locally; public report/screenshot link TBD
+- Controlled Moodle setup: Docker Compose available; manual seed checklist documented; seeded evidence TBD
+- Phase 4 local controlled Moodle smoke: implemented and passed locally; public report/screenshot link TBD
+- Phase 5 local teacher submission review: implemented for manual-seeded controlled Moodle; currently blocked locally until course URL/ID and seed data are configured; public report/screenshot link TBD
 - Mount Orange recorder findings: planned only for recon, not CI
-- First E2E scenario: TBD
-- First API coverage: TBD
+- Full teacher assignment grading E2E: Phase 6 planned/TBD
+- First API coverage beyond safe preflight: TBD
 
 ## Phase 3 automation skeleton
 - Cucumber + TypeScript skeleton: Ready locally after dependency install
@@ -31,7 +32,13 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 ## Phase 4 local smoke
 - Controlled Moodle wait script: Ready
 - Local login page smoke: Passed locally with `npm run test:local:smoke`
-- Teacher/student/course/assignment provisioning: Phase 5
+- Teacher/student/course/assignment provisioning: Manual seed required for Phase 5
+
+## Phase 5 local teacher workflow
+- Controlled data readiness check: Ready with `npm run check:data`
+- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; blocked until manual seed values are configured
+- Seed evidence and public Allure report: TBD
+- Grading and gradebook reconciliation: Phase 6
 
 ## Phase 2 design artifacts
 - [Traceability Matrix](TRACEABILITY_MATRIX.md): Ready
@@ -39,7 +46,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - [BDD Architecture](BDD_ARCHITECTURE.md): Ready
 - [API Coverage Matrix](API_COVERAGE_MATRIX.md): Ready
 
-These artifacts define planned coverage only. Allure report, GitHub Actions run, demo video, recorder findings, first E2E, and first implemented API coverage remain TBD until Phase 3 implementation produces evidence.
+These artifacts define planned coverage only. Allure public report, demo video, recorder findings, full teacher workflow E2E, and implemented Moodle API coverage beyond safe preflight remain TBD until later implementation produces evidence.
 
 ## Related portfolio implementations
 - Hora Services Logistics QA Platform: https://github.com/vmurashev365/logistics-qa-automation-platform
@@ -62,4 +69,4 @@ These artifacts define planned coverage only. Allure report, GitHub Actions run,
 - Planned
 - Placeholder
 
-Notes: Links marked "TBD" are honest placeholders until Phase 3/4 evidence is produced. Do not use placeholders as evidence.
+Notes: Links marked "TBD" are honest placeholders until evidence is produced and published. Do not use placeholders as evidence.

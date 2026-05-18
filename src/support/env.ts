@@ -17,6 +17,15 @@ export interface TestEnv {
   assignmentName: string;
   audioResourceName: string;
   targetGrade: number;
+  courseId: string;
+  assignmentId: string;
+  studentId: string;
+  submissionId: string;
+  courseUrl: string;
+  assignmentUrl: string;
+  assignmentSubmissionsUrl: string;
+  gradebookUrl: string;
+  studentDisplayName: string;
   readyTimeoutMs: number;
   headless: boolean;
   traceOnFailure: boolean;
@@ -71,6 +80,15 @@ export function loadEnv(): TestEnv {
     assignmentName: readEnv('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy'),
     audioResourceName: readEnv('MOODLE_AUDIO_RESOURCE_NAME', 'Sample Listening Task'),
     targetGrade: readNumber('MOODLE_TARGET_GRADE', 82),
+    courseId: readEnv('MOODLE_COURSE_ID', ''),
+    assignmentId: readEnv('MOODLE_ASSIGNMENT_ID', ''),
+    studentId: readEnv('MOODLE_STUDENT_ID', ''),
+    submissionId: readEnv('MOODLE_SUBMISSION_ID', ''),
+    courseUrl: readEnv('MOODLE_COURSE_URL', ''),
+    assignmentUrl: readEnv('MOODLE_ASSIGNMENT_URL', ''),
+    assignmentSubmissionsUrl: readEnv('MOODLE_ASSIGNMENT_SUBMISSIONS_URL', ''),
+    gradebookUrl: readEnv('MOODLE_GRADEBOOK_URL', ''),
+    studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
     readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
     headless: readBoolean('HEADLESS', true),
     traceOnFailure: readBoolean('TRACE_ON_FAILURE', true),
@@ -136,6 +154,10 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       assignmentName: env.assignmentName,
       audioResourceName: env.audioResourceName,
       targetGrade: env.targetGrade,
+      courseNavigationConfigured: Boolean(env.courseId || env.courseUrl),
+      assignmentNavigationConfigured: Boolean(env.assignmentId || env.assignmentUrl),
+      submissionsNavigationConfigured: Boolean(env.assignmentSubmissionsUrl || env.assignmentId || env.assignmentUrl),
+      studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       readyTimeoutMs: env.readyTimeoutMs,
       apiTokenConfigured: Boolean(env.apiToken),
       headless: env.headless,

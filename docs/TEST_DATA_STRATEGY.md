@@ -28,7 +28,7 @@ Final usernames may be adapted to the actual Moodle setup, but the logical roles
 |---|---|---|---|---|
 | manager/admin | `manager.qa` | Environment preflight, seed verification, controlled setup support. | Site administration or sufficient Web Service permissions for test setup and validation. | API preflight, seed setup, teardown checks |
 | teacher | `teacher.qa` | Primary actor for dashboard, course, assignment, submission review, grading, and gradebook validation. | Teacher role in `QA Automation Demo 101`; access to assignment submissions and grading. | Teacher E2E, UI checks, grade workflow |
-| student | `student.qa` | Learner actor with deterministic submission and grade visibility. | Student role in `QA Automation Demo 101`; access to course, assignment, submission, gradebook/grade view as configured. | Submission setup, student-visible grade, media smoke |
+| student | `student.qa` | Learner actor with deterministic submission and grade visibility. | Student role in `QA Automation Demo 101`; access to course, assignment, submission, gradebook/grade view as configured. Display name should match `MOODLE_STUDENT_DISPLAY_NAME`, for example `Student QA`. | Submission setup, student-visible grade, media smoke |
 | optional unenrolled student | `outsider.student.qa` | Negative access actor for restricted course and assignment checks. | Authenticated user without enrolment in the controlled course. | Future role/permission negative checks |
 
 ## Course And Assignment Data
@@ -79,6 +79,7 @@ Exact Moodle Web Service function names must be confirmed during Phase 3 against
 Use names that are explicit, stable, and clearly marked as QA data:
 
 - Usernames: `manager.qa`, `teacher.qa`, `student.qa`, `outsider.student.qa`.
+- Student display name: `Student QA` or the exact configured `MOODLE_STUDENT_DISPLAY_NAME`.
 - Course full name: `QA Automation Demo 101`.
 - Assignment name: `Essay: Test Automation Strategy`.
 - Audio resource name: `Sample Listening Task`.
@@ -126,11 +127,15 @@ If the controlled environment cannot support API mutation immediately, Phase 3 m
 ## Phase 4 / Phase 5 Provisioning Note
 Phase 4 introduces a local login-page smoke that verifies Moodle reachability and the login form only. It does not require seeded teacher/student users, course, assignment, submission, or grade data.
 
-Phase 5 should provision and verify:
+Phase 5 uses manual controlled seed data until Moodle Web Services are verified. Before running `npm run test:local:teacher-workflow`, create or confirm:
 
 - controlled teacher, student, and manager/admin users
+- student username `student.qa` with display name `Student QA` or the exact configured `MOODLE_STUDENT_DISPLAY_NAME`
 - `QA Automation Demo 101`
 - `Essay: Test Automation Strategy`
 - deterministic student submission
-- `82 / 100` grade baseline
-- Moodle Web Services needed for setup, teardown, and backend validation
+- teacher and student enrolments in the controlled course
+- `.env` values for `MOODLE_COURSE_ID` or `MOODLE_COURSE_URL`
+- optional `.env` values for assignment/submissions URLs or IDs when known
+
+The Phase 5 workflow reviews the deterministic submission from the teacher perspective. Grade entry, gradebook reconciliation, API-backed seed, teardown, and backend validation remain Phase 6 work unless the controlled instance is configured and verified earlier.

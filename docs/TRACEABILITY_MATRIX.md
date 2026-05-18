@@ -63,11 +63,11 @@ Automation status values:
 | ID | Requirement / business contract | Related risk ID(s) | Planned test scenario | Test layer | Priority | Automation status | Evidence target |
 |---|---|---|---|---|---|---|---|
 | REQ-AUTH-000 | Controlled Moodle login page is reachable before deeper workflow execution. | R11 | Open the local controlled Moodle login page and verify the login form is visible. | Local smoke, UI check | P0 | Implemented locally | Allure test case, screenshot on failure |
-| REQ-AUTH-001 | Teacher can authenticate and reach the Moodle start state for assigned work. | R1, R9 | Teacher logs in and lands on a session-ready dashboard. | UI check, API precheck | P0 | Designed | Allure test case, screenshot on failure |
+| REQ-AUTH-001 | Teacher can authenticate and reach the Moodle start state for assigned work. | R1, R9 | Teacher logs in with configured controlled credentials before opening assigned work. | UI check, API precheck | P0 | Ready for local validation | Allure test case, screenshot on failure |
 | REQ-DASH-001 | Teacher dashboard shows the assigned course and actionable learning work. | R1, R8, R9 | Teacher dashboard lists `QA Automation Demo 101` and links to active course work. | UI check, API reconciliation | P1 | Designed | Allure test case, API response attachment |
-| REQ-COURSE-001 | Teacher can open the assigned course from the dashboard or course navigation. | R1 | Teacher opens `QA Automation Demo 101` and sees the expected course context. | UI check, API check | P0 | Designed | Allure test case, trace/video on failure |
-| REQ-ASSIGN-001 | Teacher can open the target assignment and review the assignment workflow entry point. | R2 | Teacher opens `Essay: Test Automation Strategy` from the course. | UI check, API check | P0 | Designed | Allure test case, screenshot on failure |
-| REQ-SUBMIT-001 | Teacher can see the deterministic student submission for the assignment. | R3, R9, R12 | Teacher opens assignment submissions and sees `student.qa` submitted work. | E2E workflow, API reconciliation | P0 | Ready for implementation | Allure test case, API response attachment |
+| REQ-COURSE-001 | Teacher can open the assigned course from configured controlled navigation. | R1 | Teacher opens `QA Automation Demo 101` using controlled course ID or URL and sees the course context. | UI check, API check | P0 | Ready for local validation | Allure test case, trace/video on failure |
+| REQ-ASSIGN-001 | Teacher can open the target assignment and review the assignment workflow entry point. | R2 | Teacher opens `Essay: Test Automation Strategy` from configured URL/ID or visible course link. | UI check, API check | P0 | Ready for local validation | Allure test case, screenshot on failure |
+| REQ-SUBMIT-001 | Teacher can see the deterministic student submission for the assignment. | R3, R9, R12 | Teacher opens assignment submissions and sees `student.qa` submitted work after manual seed. | E2E workflow, API reconciliation | P0 | Ready for local validation | Allure test case, API response attachment |
 | REQ-GRADE-001 | Teacher grade entry is saved and persists after navigation or refresh. | R4, R9 | Teacher grades the deterministic submission as `82 / 100` and the saved grade persists. | E2E workflow, API validation | P0 | Ready for implementation | Allure test case, trace/video on failure |
 | REQ-GRADEBOOK-001 | Gradebook displays the same grade produced by the assignment grading workflow. | R5, R6, R9 | Gradebook shows `82 / 100` for `student.qa` in `QA Automation Demo 101`. | E2E workflow, API reconciliation | P0 | Ready for implementation | Allure test case, API response attachment |
 | REQ-ROLE-001 | Student cannot access teacher-only grading pages or actions. | R7 | Student attempts to open a teacher-only grading page and is denied or redirected. | Security/permission check | P0 | Designed | Allure test case, screenshot on failure |
@@ -75,7 +75,7 @@ Automation status values:
 | REQ-MEDIA-001 | Audio learning resource renders and exposes expected controls for the learner. | R10 | Student opens `Sample Listening Task` and audio controls are visible. | Media/audio smoke, UI check | P1 | Designed | Allure test case, screenshot on failure |
 | REQ-API-001 | API helpers can authenticate, inspect site readiness, and validate core Moodle state. | R9, R11 | API preflight confirms controlled Moodle is reachable and test users/course exist. | API checks | P0 | Designed | CI artifact, API response attachment |
 | REQ-API-002 | API helpers validate users, roles, course enrolment, assignment, submission, and grade state. | R1, R2, R3, R4, R5, R6, R7, R9 | Backend checks confirm the UI workflow state before and after E2E execution. | API checks | P0 | Designed | Allure API attachments, CI artifact |
-| REQ-DATA-001 | Test data is deterministic, isolated, and resettable between runs. | R11, R12 | Controlled seed data exists before the run and cleanup/reset leaves no polluted state. | API setup/teardown | P0 | Blocked by environment | CI artifact, recorder note |
+| REQ-DATA-001 | Test data is deterministic, isolated, and resettable between runs. | R11, R12 | Manual seed checklist and local data readiness check confirm required controlled data contract before the teacher workflow. | Manual seed, local readiness | P0 | Ready for local validation | local readiness log, recorder note |
 
 ## Coverage Summary
 Planned Phase 2 design coverage:
@@ -106,11 +106,11 @@ Planned Phase 2 design coverage:
 | Phase 2 | Design traceability, data strategy, BDD architecture, and API coverage. | This document |
 | Phase 3 | Create Cucumber/Playwright/TypeScript skeleton, controlled Moodle setup contract, feature files, page object placeholders, API helper skeleton, CI validation, and local execution commands. | Skeleton created; implementation pending |
 | Phase 4 | Implement the first controlled Moodle readiness/login smoke and document local execution. | Implemented locally; public evidence TBD |
-| Phase 5 | Provision controlled users/course/assignment/submission/grade and implement the first real teacher workflow. | Future expansion |
+| Phase 5 | Add manual-seed data readiness and first teacher submission-review workflow. | Ready for local validation; pass depends on seeded Moodle data |
 
 ## Known Gaps / Future Expansion
-- Exact Moodle Web Service functions must be confirmed against the configured controlled Moodle instance during Phase 3.
+- Exact Moodle Web Service functions must be confirmed against the configured controlled Moodle instance during Phase 6.
 - Final course, assignment, resource, and user identifiers may change by environment, but scenario vocabulary should remain stable.
 - Mount Orange recorder notes may support exploratory learning, but they must not become CI evidence.
 - Accessibility checks are limited to smoke-level observations until a dedicated accessibility pass is planned.
-- Multi-course, group-mode, rubric, file-upload edge cases, and notifications remain future expansion unless promoted by risk.
+- API-backed seeding, grading/gradebook reconciliation, role-negative checks, media validation, multi-course, group-mode, rubric, file-upload edge cases, and notifications remain future expansion unless promoted by risk.

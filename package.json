@@ -13,6 +13,8 @@
     "test:all": "cucumber-js --profile all",
     "test:wip": "cucumber-js --profile wip",
     "test:local:smoke": "cucumber-js --profile smoke --tags \"@phase4 and @local and not @wip\"",
+    "test:local:teacher-workflow": "cucumber-js --profile e2e --tags \"@phase5 and @local and not @wip\"",
+    "install:browsers": "playwright install chromium",
     "type-check": "tsc --noEmit",
     "lint": "tsc --noEmit",
     "format": "prettier --check .",
@@ -28,6 +30,7 @@
     "moodle:logs": "docker compose logs -f moodle mariadb",
     "moodle:wait": "ts-node scripts/wait-for-moodle.ts",
     "verify:env": "ts-node scripts/verify-env.ts",
+    "check:data": "ts-node scripts/check-controlled-data.ts",
     "seed:placeholder": "ts-node scripts/seed-placeholder.ts",
     "clean:placeholder": "ts-node scripts/clean-placeholder.ts"
   },

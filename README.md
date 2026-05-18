@@ -17,7 +17,20 @@ Phase 4 adds the first real local controlled-Moodle smoke path:
 - open the controlled Moodle login page
 - assert the login form is visible
 
-Teacher/student users, course, assignment, submission, grade, and the first real teacher workflow remain Phase 5 scope unless provisioned manually.
+Teacher/student users, course, assignment, submission, and grade still require controlled seed data before deeper workflows can pass.
+
+## Phase 5 teacher workflow status
+Phase 5 adds the first teacher-facing local workflow path:
+
+- verify the controlled Moodle instance is reachable
+- verify the local Phase 5 data contract is configured
+- log in as the configured teacher
+- open the controlled course
+- open the controlled assignment
+- open the submissions view
+- assert the deterministic student submission is visible
+
+Data setup is manual for now because Moodle Web Services and seed permissions are not yet verified in the controlled instance. Grading and gradebook reconciliation remain Phase 6 scope unless the local instance is seeded and verified earlier.
 
 ## Planned technology stack
 - Playwright
@@ -72,6 +85,7 @@ Install dependencies:
 
 ```bash
 npm install
+npm run install:browsers
 ```
 
 Prepare local environment variables:
@@ -86,6 +100,8 @@ Start or stop the local controlled Moodle stack:
 npm run moodle:start
 npm run moodle:wait
 npm run test:local:smoke
+npm run check:data
+npm run test:local:teacher-workflow
 npm run moodle:stop
 ```
 
@@ -105,7 +121,7 @@ npm run test:wip
 
 `@wip` scenarios are expected to fail with explicit pending implementation messages until Moodle selectors and API functions are confirmed.
 
-GitHub Actions currently runs static/skeleton validation and safe API preflight only. It does not start Moodle or depend on a public demo instance.
+GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 
 ## Why this matters for EdTech teams
 Teacher workflows (assignment lifecycle, grading, gradebook reconciliation) are directly tied to student outcomes. Detecting regressions early and proving gradebook integrity protects learners and institutional reporting.
@@ -115,7 +131,7 @@ New scenarios can be composed from existing approved Lego Steps without changing
 
 This encourages consistent vocabulary across Product, Manual QA and Automation while keeping the automation implementation manageable and reviewable. It does not mean that non-technical users can create automated tests without engineering support—engineering implements and reviews the approved Lego Steps.
 
-## Planned folder structure (phase 3 skeleton)
+## Current folder structure
 ```
 / (repo root)
   README.md
@@ -138,11 +154,11 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
     TEST_EXECUTION_PROCEDURE.md
   features/            (feature files — phase 3)
   src/                 (step implementations, page objects — phase 3)
-  .github/workflows/   (GitHub Actions CI — phase 3)
+  .github/workflows/   (static framework CI)
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: current UI and E2E workflows beyond the login smoke are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published.
+Note: current UI and E2E workflows beyond the Phase 5 submission-review path are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. Phase 6 adds API-backed seeding, grading/gradebook reconciliation, role-negative checks, and media validation.
 
 ---
-Last updated: Phase 4 (controlled Moodle login smoke)
+Last updated: Phase 5 (manual-seed teacher submission review workflow)

@@ -1,6 +1,7 @@
 export const dashboardSelectors = {
   dashboardPage: {
-    courseCard: 'pending: controlled course card locator to be verified',
-    courseLink: 'pending: controlled course link locator to be verified'
+    mainRegion: '#region-main, main[role="main"]',
+    courseCard: '[data-region="course-content"], .coursebox, .dashboard-card',
+    courseLink: 'a[href*="/course/view.php"]'
   }
 } as const;

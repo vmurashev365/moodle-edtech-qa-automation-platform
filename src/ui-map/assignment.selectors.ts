@@ -1,9 +1,10 @@
 export const assignmentSelectors = {
   assignmentPage: {
-    assignmentTitle: 'pending: assignment title locator to be verified',
-    submissionsLink: 'pending: submissions link locator to be verified',
-    studentSubmissionRow: 'pending: student submission row locator to be verified',
-    gradeInput: 'pending: grade input locator to be verified',
-    saveGradeAction: 'pending: save grade action locator to be verified'
+    mainRegion: '#region-main, main[role="main"]',
+    assignmentTitle: 'h1, .page-header-headings h1',
+    submissionsAction: 'a[href*="action=grading"], input[name="grade"], button[name="grade"]',
+    submissionsTable: 'table#attempts, table.generaltable',
+    gradeInput: 'input[name*="grade"], input[id*="grade"]',
+    saveGradeAction: 'input[type="submit"], button[type="submit"]'
   }
 } as const;

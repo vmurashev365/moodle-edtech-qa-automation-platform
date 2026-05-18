@@ -1,4 +1,4 @@
-name: Phase 3 Skeleton CI
+name: Static Framework CI
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   validate:
-    name: Validate TypeScript and Cucumber skeleton
+    name: Validate TypeScript, Cucumber, and safe API preflight
     runs-on: ubuntu-latest
     env:
       MOODLE_BASE_URL: http://localhost:8080
@@ -60,7 +60,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: phase-3-skeleton-reports
+          name: framework-validation-reports
           path: |
             reports/
             screenshots/

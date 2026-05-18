@@ -28,6 +28,11 @@ When('I open the Moodle login page', async function (this: MoodleWorld) {
   await loginPage.open();
 });
 
+When('I log in as the configured teacher user', async function (this: MoodleWorld) {
+  const loginPage = new LoginPage(this.requirePage());
+  await loginPage.signInAs('teacher', this.env);
+});
+
 Then('the Moodle login form should be visible', async function (this: MoodleWorld) {
   const loginPage = new LoginPage(this.requirePage());
   await loginPage.expectLoginFormVisible();

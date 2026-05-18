@@ -17,16 +17,10 @@ To demonstrate a repeatable, risk-focused QA automation approach for EdTech plat
 - Assignment lifecycle fails after product changes
 - Audio/media learning resource unavailable or controls broken
 
-## Workflows validated (MVP)
-- Teacher dashboard
-- Course access
-- Assignment lifecycle
-- Student submission
-- Teacher grading
-- Gradebook validation
-- Role-based access
-- Selected media/audio resource checks
-- API-backed test data setup and backend validation
+## Workflows covered or planned
+- Phase 4 local smoke: controlled Moodle login page reachability.
+- Phase 5 local workflow: teacher submission review against manually seeded controlled data.
+- Planned next coverage: teacher grading, gradebook validation, role-based access, selected media/audio resource checks, and API-backed test data setup/backend validation.
 
 ## User roles covered
 - teacher
@@ -40,10 +34,13 @@ To demonstrate a repeatable, risk-focused QA automation approach for EdTech plat
 Automation provides repeatable regression coverage and fast feedback for business-critical flows. Manual QA focuses on exploratory testing, human-centric edge cases, and accessibility contexts that are not yet automated.
 
 ## How reports and evidence are produced
-- Automation artifacts are published to Allure and archived via CI runs (GitHub Actions). Video or recorded recon notes are linked from the evidence index. Phase 1 contains placeholders; Phase 2/3 will publish concrete links.
+- Static CI evidence is produced through GitHub Actions artifacts.
+- Local controlled Moodle smoke and Phase 5 teacher workflow results are local evidence until published.
+- Public Allure report and demo video remain TBD.
+- [EVIDENCE_INDEX.md](EVIDENCE_INDEX.md) is the source of truth for available artifacts and placeholders.
 
 ## Controlled environment approach
-Public Moodle demos are useful for discovery and exploratory recon only. Stable automated tests must be executed against a controlled Moodle instance (local Docker or VPS) seeded and reset for each run.
+Public Moodle demos are useful for discovery and exploratory recon only. Stable automated tests are intended to run against a controlled Moodle instance (local Docker or VPS) with deterministic seed data. API-backed reset helpers are planned after Moodle Web Services are verified.
 
 ## Reusable BDD Lego Steps as team multiplier
 New scenarios can be composed from existing approved Lego Steps without changing automation code. Senior QA Architect extends the step library when new domain behavior appears.
