@@ -1,11 +1,13 @@
 # Test Execution Procedure
 
 ## Purpose
+
 This document explains how to run the automation skeleton, the Phase 4 local Moodle smoke, the Phase 5 local teacher workflow, the Phase 6 grading readiness gate, and CI-safe checks.
 
 The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Phase 5 adds a teacher-facing submission review path that requires controlled seed data. Phase 6 grading/gradebook steps remain `@wip` until grading selectors, grade save behavior, and gradebook selectors are verified.
 
 ## Local Setup
+
 Use Node.js `24.x` to match the repository engine and GitHub Actions configuration.
 
 Install dependencies:
@@ -24,6 +26,7 @@ cp .env.example .env
 Update `.env` with any non-demo credentials, audio resource, and API token values. After seeding, run `npm run moodle:seed:env` to apply generated Moodle IDs and URLs into local `.env`.
 
 ## Environment Variables
+
 Key variables:
 
 - `MOODLE_BASE_URL`
@@ -41,11 +44,16 @@ Key variables:
 - `MOODLE_COURSE_ID` or `MOODLE_COURSE_URL`
 - `MOODLE_ASSIGNMENT_ID` or `MOODLE_ASSIGNMENT_URL`
 - `MOODLE_ASSIGNMENT_SUBMISSIONS_URL`
+- `MOODLE_STUDENT_ID`
+- `MOODLE_SUBMISSION_ID`
 - `MOODLE_STUDENT_DISPLAY_NAME`
+- `TRACE_MODE` (`off`, `retain-on-failure`, `on`, or `all`)
+- `UI_EXPECT_TIMEOUT_MS` for Page Object Playwright assertions, default `10000`
 
 The API token may be blank during skeleton validation. API mutation and backend reconciliation helpers remain pending until Moodle Web Services are configured.
 
 ## Controlled Seed Command
+
 Create or refresh the deterministic local Moodle data:
 
 ```bash
@@ -57,7 +65,7 @@ npm run moodle:seed:env
 
 The seed runs PHP inside the local Docker Moodle container and uses Moodle internal APIs for users, course creation/update, manual enrolments, assignment creation/update, and online text submission setup. It is idempotent and does not silently edit `.env`. It writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`.
 
-`npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates only deterministic Moodle metadata and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
+`npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates deterministic Moodle metadata from the generated `envSnippet`, including `MOODLE_STUDENT_ID` and `MOODLE_SUBMISSION_ID`, and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
 
 The generated artifact is local setup metadata, not public proof by itself. Recorder/Codegen selector discovery comes after seed readiness passes.
 
@@ -70,6 +78,7 @@ npm run moodle:seed:ready
 This runs seed, `.env` sync, `check:data`, and `check:grading-data` in sequence.
 
 ## Phase 5 Seed Checklist
+
 Before running the teacher workflow, create or confirm with `npm run moodle:seed`:
 
 - teacher user matching `MOODLE_TEACHER_USERNAME`
@@ -84,6 +93,7 @@ Before running the teacher workflow, create or confirm with `npm run moodle:seed
 Then run `npm run moodle:seed:env` so the generated course, assignment, submissions, gradebook, and display-name values are written to local `.env`.
 
 ## Phase 6 Grading Seed Checklist
+
 Before removing `@wip` from the grading scenario or running it as evidence, confirm:
 
 - Phase 5 controlled seed checklist is complete
@@ -97,6 +107,7 @@ Before removing `@wip` from the grading scenario or running it as evidence, conf
 The seed does not pre-grade the submission. Do not treat the generated local artifact as gradebook evidence.
 
 ## Docker Start / Stop / Reset
+
 Start the local controlled Moodle stack:
 
 ```bash
@@ -144,6 +155,7 @@ The Docker image may still require Moodle admin setup or Web Services enablement
 The default Docker images are configurable through `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`. They are intended for local controlled validation; pin or mirror approved images before relying on the stack long term.
 
 ## Static Validation
+
 Run TypeScript validation:
 
 ```bash
@@ -172,7 +184,16 @@ npm run check:grading-data
 
 `check:grading-data` validates the local grading/gradebook contract only. It does not enter grades or create gradebook evidence.
 
+Readiness-only alias:
+
+```bash
+npm run check:local:grading-readiness
+```
+
+This is the honest Phase 6 readiness command while the grading scenario remains `@wip`.
+
 ## Cucumber Suite Commands
+
 Safe skeleton API preflight:
 
 ```bash
@@ -214,9 +235,20 @@ The commands above exclude `@wip`. Until real Moodle selectors and API helpers a
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
 
-`test:local:grading` is local-only and currently blocks on `check:grading-data` until the controlled grading seed contract is configured and the `@wip` grading scenario is verified.
+`test:local:grading` is local-only and guarded against false green results. It runs the grading data check, then fails intentionally if Cucumber selects zero executable Phase 6 scenarios. Until the Phase 6 `@wip` tag is removed after real Recorder/Codegen selector evidence and a local pass, this command is not proof of grading or gradebook behavior.
+
+## Failure Evidence
+
+For Cucumber browser scenarios, Playwright tracing starts in the Cucumber World when `TRACE_MODE` is not `off`. The default is `retain-on-failure`.
+
+- `TRACE_MODE=off`: no trace capture
+- `TRACE_MODE=retain-on-failure`: save `traces/<safe-scenario-name>-trace.zip` only for failed scenarios
+- `TRACE_MODE=on` or `TRACE_MODE=all`: save traces for every browser scenario
+
+Trace zips are ignored by git and attached to Cucumber/Allure results where the reporter supports binary attachments. Screenshots on failure remain enabled separately.
 
 ## WIP / Pending Behavior
+
 Run WIP scenarios deliberately:
 
 ```bash
@@ -226,6 +258,7 @@ npm run test:wip
 WIP scenarios contain pending step implementations and are expected to fail with explicit pending messages. This is intentional and prevents fake-green automation.
 
 ## Allure Report Commands
+
 Generate an Allure report from available results:
 
 ```bash
@@ -241,6 +274,7 @@ npm run report:allure:open
 The public Allure report link remains TBD until a real controlled Moodle run is published.
 
 ## CI Limitations Before Moodle Workflow Execution
+
 GitHub Actions currently validates:
 
 - dependency installation

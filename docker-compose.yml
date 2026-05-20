@@ -2,7 +2,7 @@ services:
   mariadb:
     image: ${MARIADB_DOCKER_IMAGE:-bitnamilegacy/mariadb:11.4}
     environment:
-      ALLOW_EMPTY_PASSWORD: "no"
+      ALLOW_EMPTY_PASSWORD: 'no'
       MARIADB_ROOT_PASSWORD: ${MOODLE_DB_ROOT_PASSWORD:-changeme}
       MARIADB_USER: ${MOODLE_DB_USER:-bn_moodle}
       MARIADB_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
@@ -10,7 +10,7 @@ services:
     volumes:
       - moodle_mariadb_data:/bitnami/mariadb
     healthcheck:
-      test: ["CMD", "mariadb-admin", "ping", "-h", "127.0.0.1"]
+      test: ['CMD', 'mariadb-admin', 'ping', '-h', '127.0.0.1']
       interval: 15s
       timeout: 5s
       retries: 10
@@ -21,8 +21,8 @@ services:
       mariadb:
         condition: service_healthy
     ports:
-      - "8080:8080"
-      - "8443:8443"
+      - '8080:8080'
+      - '8443:8443'
     environment:
       MOODLE_DATABASE_HOST: mariadb
       MOODLE_DATABASE_PORT_NUMBER: 3306
@@ -32,8 +32,8 @@ services:
       MOODLE_USERNAME: ${MOODLE_ADMIN_USERNAME:-user}
       MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-changeme}
       MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@example.test}
-      MOODLE_SITE_NAME: "Moodle EdTech QA Controlled"
-      ALLOW_EMPTY_PASSWORD: "no"
+      MOODLE_SITE_NAME: 'Moodle EdTech QA Controlled'
+      ALLOW_EMPTY_PASSWORD: 'no'
     volumes:
       - moodle_app_data:/bitnami/moodle
       - moodle_data:/bitnami/moodledata

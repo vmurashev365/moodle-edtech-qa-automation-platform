@@ -1,4 +1,6 @@
-export const assignmentSelectors = {
+// Moodle CSS contracts are fallback-only. Page Objects should prefer
+// user-facing role/text locators before using these Moodle-specific hooks.
+export const assignmentLegacySelectors = {
   assignmentPage: {
     mainRegion: '#region-main, main[role="main"]',
     assignmentTitle: 'h1, .page-header-headings h1',

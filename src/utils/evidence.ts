@@ -5,7 +5,10 @@ interface AttachmentWorld {
 }
 
 function sanitizeFileName(name: string): string {
-  return name.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase();
+  return name
+    .replace(/[^a-z0-9]+/gi, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
 }
 
 export async function attachJson(world: AttachmentWorld, title: string, payload: unknown): Promise<void> {

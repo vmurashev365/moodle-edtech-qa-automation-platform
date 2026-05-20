@@ -1,9 +1,8 @@
 import { Then } from '@cucumber/cucumber';
+import { BasePage } from '../../pages/base/BasePage';
 import type { MoodleWorld } from '../../support/custom-world';
-import { assertIncludes } from '../../utils/assertions';
 
 Then('the current page title should include {string}', async function (this: MoodleWorld, expectedTitle: string) {
-  const page = this.requirePage();
-  const actualTitle = await page.title();
-  assertIncludes(actualTitle, expectedTitle);
+  const basePage = new BasePage(this.requirePage());
+  await basePage.expectTitleToContain(expectedTitle);
 });

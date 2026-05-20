@@ -104,7 +104,9 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
   }
 
   if (env.teacherPassword === 'changeme') {
-    warnings.push('MOODLE_TEACHER_PASSWORD still uses the placeholder value; update it if the teacher account differs.');
+    warnings.push(
+      'MOODLE_TEACHER_PASSWORD still uses the placeholder value; update it if the teacher account differs.'
+    );
   }
 
   if (!courseUrl) {
@@ -130,7 +132,9 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
   }
 
   if (studentTerms.length === 0) {
-    errors.push('Set MOODLE_STUDENT_DISPLAY_NAME, MOODLE_STUDENT_USERNAME, or MOODLE_STUDENT_ID for submission visibility.');
+    errors.push(
+      'Set MOODLE_STUDENT_DISPLAY_NAME, MOODLE_STUDENT_USERNAME, or MOODLE_STUDENT_ID for submission visibility.'
+    );
   }
 
   if (!hasValue(env.apiToken)) {
@@ -170,7 +174,9 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
   }
 
   if (!gradebookUrl) {
-    errors.push('Set MOODLE_GRADEBOOK_URL, MOODLE_COURSE_ID, or MOODLE_COURSE_URL before running Phase 6 gradebook validation.');
+    errors.push(
+      'Set MOODLE_GRADEBOOK_URL, MOODLE_COURSE_ID, or MOODLE_COURSE_URL before running Phase 6 gradebook validation.'
+    );
   }
 
   if (!Number.isFinite(env.targetGrade)) {

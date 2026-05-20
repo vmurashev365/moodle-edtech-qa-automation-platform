@@ -1,11 +1,21 @@
 # BDD Architecture
 
 ## Purpose
+
 This document defines the Moodle BDD Lego Steps architecture for Phase 2 test design. It explains how Cucumber scenarios should be structured before Phase 3 adds feature files, step definitions, page objects, API helpers, and CI.
 
 The architecture preserves the Atomic -> Domain -> Composite model required by repository governance.
 
+## Runner Choice: cucumber-js With Playwright Engine
+
+This repository intentionally uses `cucumber-js` as the BDD runner. Playwright is the browser automation engine underneath Cucumber support code, hooks, page objects, and step definitions.
+
+That split keeps the demo focused on reusable Lego Steps vocabulary and team-readable Gherkin instead of Playwright Test runner structure. The custom Cucumber World gives explicit control over seeded Moodle data, the environment contract, role-based sessions, evidence attachments, and Allure/Cucumber reporting.
+
+`playwright-bdd` is a valid alternative and could be considered later if a team wants stronger Playwright-native fixtures, Trace Viewer conventions, or Playwright Test runner integration. This pass does not convert the project to `playwright-bdd` or Playwright Test.
+
 ## Why BDD Lego Steps Matter For EdTech Teams
+
 Moodle workflows involve Product, Manual QA, Automation, and sometimes academic operations stakeholders. BDD scenarios give those groups a shared language for learning workflows, grading integrity, and permission boundaries.
 
 New scenarios can be composed from existing approved Lego Steps without changing automation code. Senior QA Architect extends the step library when new domain behavior appears.
@@ -14,13 +24,14 @@ This keeps scenario authoring readable while avoiding the overclaim that non-tec
 
 ## Three-Layer BDD Model
 
-| Layer | Definition | Primary reader | Phase 3 ownership |
-|---|---|---|---|
-| Atomic | Low-level reusable technical actions. | Automation engineers | Senior QA Architect / QA automation |
-| Domain | Moodle business actions using approved domain vocabulary. | QA, Product, Engineering | Senior QA Architect with team review |
-| Composite | End-to-end business workflows built from domain steps. | Reviewers and stakeholders | QA team with architect governance |
+| Layer     | Definition                                                | Primary reader             | Phase 3 ownership                    |
+| --------- | --------------------------------------------------------- | -------------------------- | ------------------------------------ |
+| Atomic    | Low-level reusable technical actions.                     | Automation engineers       | Senior QA Architect / QA automation  |
+| Domain    | Moodle business actions using approved domain vocabulary. | QA, Product, Engineering   | Senior QA Architect with team review |
+| Composite | End-to-end business workflows built from domain steps.    | Reviewers and stakeholders | QA team with architect governance    |
 
 ## Atomic Steps
+
 Atomic steps are low-level reusable technical actions. They should be generic enough to support many Moodle workflows, but they should not leak raw selectors into feature files.
 
 Examples of future atomic responsibilities:
@@ -35,6 +46,7 @@ Examples of future atomic responsibilities:
 Atomic steps are implementation-facing. They are not the preferred vocabulary for reviewer-facing scenarios.
 
 ## Domain Steps
+
 Domain steps express Moodle business actions using approved vocabulary.
 
 Examples:
@@ -49,6 +61,7 @@ Examples:
 Domain steps are the normal building blocks for feature files.
 
 ## Composite Steps
+
 Composite steps represent end-to-end workflows built from domain steps. They are useful when a workflow has become stable and frequently reused.
 
 Examples:
@@ -60,11 +73,12 @@ Examples:
 Composite steps should remain business-readable and should not hide too much risk. If a workflow fails often or needs detailed evidence, prefer explicit domain steps until the behavior is stable.
 
 ## Moodle-Specific Step Vocabulary
+
 Approved vocabulary should use Moodle and EdTech language:
 
 - Teacher
 - Student
-- Manager/admin
+- Built-in admin / future manager
 - Course
 - Assignment
 - Submission
@@ -79,6 +93,7 @@ Approved vocabulary should use Moodle and EdTech language:
 Avoid raw selectors, implementation names, and unrelated domain language in feature files.
 
 ## Good Scenario Examples
+
 These snippets are examples of intended scenario design. They are not implementation code and should not be added as feature files in this Phase 2 documentation pass.
 
 Teacher login and dashboard access:
@@ -138,11 +153,12 @@ Scenario: Student can see audio resource controls
 ```
 
 ## Anti-Patterns
+
 Avoid these patterns:
 
 - Raw CSS, XPath, test IDs, or DOM structure in feature files.
 - UI-only scenarios that claim gradebook correctness without API or backend reconciliation.
-- Overly generic steps such as `When I click the button` in business-facing scenarios.
+- Broad imperative interaction steps such as `When I click the button`, `When I enter "value"`, or `Then I see "text"` in business-facing scenarios.
 - Large composite steps that hide the actual business risk being tested.
 - Scenario names that describe tooling instead of Moodle behavior.
 - Public demo data used as if it were deterministic CI data.
@@ -150,25 +166,29 @@ Avoid these patterns:
 - Unrelated portfolio-domain vocabulary in Moodle feature scope.
 
 ## Governance Rules
+
 - Feature files and BDD vocabulary drive test scope and review.
 - Playwright belongs inside Cucumber step definitions during implementation; the repository must not become a plain Playwright Test runner architecture.
 - Feature files must not contain raw selectors.
 - UI automation should use Page Objects and a UI-MAP when code is added.
+- Page Objects should prefer user-facing Playwright locators (`getByRole`, `getByLabel`, `getByText`) and centralized Playwright web-first assertions through `uiExpect`. UI-MAP CSS strings are Moodle legacy fallback contracts, not the primary locator strategy.
 - API helpers should support setup, teardown, and backend validation.
+- Failed browser scenarios should retain Playwright Trace Viewer zip evidence when tracing is enabled.
 - BDD vocabulary changes require documentation and evidence index updates.
 - New workflow automation requires test scope, environment, data setup, and evidence links in the PR description.
 - Any AI-assisted step implementation in Phase 3 should include a short PR note describing the prompt and acceptance criteria.
 
 ## Phase 3 Implementation Mapping
+
 The Phase 3 skeleton maps this design into:
 
-| Design concept | Phase 3 implementation target |
-|---|---|
-| Atomic steps | Cucumber step definitions backed by Playwright actions and API helper calls. |
-| Domain steps | Moodle-specific Cucumber vocabulary for teacher, student, course, assignment, submission, grade, and gradebook workflows. |
-| Composite steps | Reused workflows for controlled setup, grading lifecycle, and gradebook reconciliation. |
-| Page Objects / UI-MAP | Selector ownership and page interaction boundaries. |
-| API helpers | Setup, teardown, and canonical state validation. |
-| Evidence hooks | Allure attachments, screenshots on failure, API response attachments, trace/video on failure where enabled. |
+| Design concept        | Phase 3 implementation target                                                                                             |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| Atomic steps          | Cucumber step definitions backed by Playwright actions and API helper calls.                                              |
+| Domain steps          | Moodle-specific Cucumber vocabulary for teacher, student, course, assignment, submission, grade, and gradebook workflows. |
+| Composite steps       | Reused workflows for controlled setup, grading lifecycle, and gradebook reconciliation.                                   |
+| Page Objects / UI-MAP | Selector ownership and page interaction boundaries.                                                                       |
+| API helpers           | Setup, teardown, and canonical state validation.                                                                          |
+| Evidence hooks        | Allure attachments, screenshots on failure, API response attachments, trace/video on failure where enabled.               |
 
 The current skeleton provides the structure and pending step contracts. Real Moodle workflow automation remains pending until controlled Moodle selectors and Web Service functions are verified.

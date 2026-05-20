@@ -1,0 +1,15 @@
+node_modules/
+dist/
+.npm-cache/
+reports/
+artifacts/
+screenshots/
+videos/
+traces/
+allure-results/
+allure-report/
+test-results/
+playwright-report/
+coverage/
+tools/
+_reference_*/

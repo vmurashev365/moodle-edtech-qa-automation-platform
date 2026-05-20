@@ -22,7 +22,6 @@ export const browserContextOptions: BrowserContextOptions = {
 };
 
 export default {
-  note: 'Playwright is used by Cucumber step definitions. This repository does not use Playwright Test as the primary runner.',
   baseURL: env.baseUrl,
   browserLaunchOptions,
   browserContextOptions

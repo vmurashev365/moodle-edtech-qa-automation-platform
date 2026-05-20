@@ -1,5 +1,5 @@
-import { dashboardSelectors } from '../../ui-map/dashboard.selectors';
-import { assertTrue } from '../../utils/assertions';
+import { uiExpect } from '../../support/ui-expect';
+import { dashboardLegacySelectors } from '../../ui-map/dashboard.selectors';
 import { BasePage } from '../base/BasePage';
 
 export class TeacherDashboardPage extends BasePage {
@@ -9,12 +9,12 @@ export class TeacherDashboardPage extends BasePage {
   }
 
   async expectCourseVisible(courseName: string): Promise<void> {
-    const courseLink = this.page
-      .locator(dashboardSelectors.dashboardPage.courseLink)
-      .filter({ hasText: courseName })
-      .first();
-    const visible = await courseLink.isVisible({ timeout: 10000 }).catch(() => false);
+    const accessibleCourse = this.page.getByRole('link', { name: this.textMatcher(courseName) });
+    const legacyCourse = this.page
+      .locator(dashboardLegacySelectors.dashboardPage.courseLink)
+      .filter({ hasText: this.textMatcher(courseName) });
+    const courseLink = accessibleCourse.or(legacyCourse).first();
 
-    assertTrue(visible, `Expected teacher dashboard to show controlled course "${courseName}".`);
+    await uiExpect(courseLink, `Expected teacher dashboard to show controlled course "${courseName}".`).toBeVisible();
   }
 }

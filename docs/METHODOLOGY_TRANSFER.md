@@ -4,12 +4,13 @@ These are portfolio implementations demonstrating QA methodology transferability
 
 This public document references only repository evidence intended to be accessible for review. Private/local reference implementations may be used internally as pattern sources, but they are not listed as public evidence.
 
-| Portfolio implementation | Repository | Domain | Controlled platform | Core workflows | Main risks covered | Shared QA methodology |
-|---|---|---|---|---|---|---|
-| [Hora Services Logistics QA Platform](https://github.com/vmurashev365/logistics-qa-automation-platform) | `logistics-qa-automation-platform` | Logistics / ERP | Odoo Community demo/testbed | Fleet, HOS/ELD, IFTA/finance, inspections, offline sync, CTI | Compliance drift, fleet data errors, offline sync issues, integration failures | Risk analysis, controlled environment, BDD Lego Steps, API/UI/DB validation |
-| [Moodle Teacher QA](https://github.com/vmurashev365/moodle-edtech-qa-automation-platform) | `moodle-edtech-qa-automation-platform` | EdTech / LMS | Controlled Moodle instance (Docker / VPS) | Teacher dashboard, assignment lifecycle, grading, gradebook | Grading loss, permission issues, reporting drift | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation |
+| Portfolio implementation                                                                                | Repository                             | Domain          | Controlled platform                       | Core workflows                                               | Main risks covered                                                             | Shared QA methodology                                                       |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------- | ----------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| [Hora Services Logistics QA Platform](https://github.com/vmurashev365/logistics-qa-automation-platform) | `logistics-qa-automation-platform`     | Logistics / ERP | Odoo Community demo/testbed               | Fleet, HOS/ELD, IFTA/finance, inspections, offline sync, CTI | Compliance drift, fleet data errors, offline sync issues, integration failures | Risk analysis, controlled environment, BDD Lego Steps, API/UI/DB validation |
+| [Moodle Teacher QA](https://github.com/vmurashev365/moodle-edtech-qa-automation-platform)               | `moodle-edtech-qa-automation-platform` | EdTech / LMS    | Controlled Moodle instance (Docker / VPS) | Teacher dashboard, assignment lifecycle, grading, gradebook  | Grading loss, permission issues, reporting drift                               | Risk analysis, controlled environment, BDD Lego Steps, API/UI validation    |
 
 Shared methodology (core)
+
 1. Domain risk analysis
 2. Controlled test environment (deterministic seed data)
 3. Business-critical workflow mapping (scenarios)
@@ -19,6 +20,7 @@ Shared methodology (core)
 7. Allure / CI evidence publication
 
 What changes by domain
+
 - user roles and permission model
 - business contracts and workflows
 - test data shape and seeding helpers

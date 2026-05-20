@@ -8,6 +8,8 @@ export class CoursesHelper {
   async findByName(courseName: string): Promise<MoodleCourse> {
     void this.client;
     void courseName;
-    pendingImplementation('Moodle course lookup helper. Function name to be confirmed against configured Web Services.');
+    pendingImplementation(
+      'Moodle course lookup helper. Function name to be confirmed against configured Web Services.'
+    );
   }
 }

@@ -1,7 +1,7 @@
 import type { TestEnv } from '../../support/env';
 import { resolveCourseUrl } from '../../support/data-readiness';
-import { courseSelectors } from '../../ui-map/course.selectors';
-import { assertTrue } from '../../utils/assertions';
+import { uiExpect } from '../../support/ui-expect';
+import { courseLegacySelectors } from '../../ui-map/course.selectors';
 import { BasePage } from '../base/BasePage';
 
 export class CoursePage extends BasePage {
@@ -17,36 +17,36 @@ export class CoursePage extends BasePage {
   }
 
   async openCourse(courseName: string): Promise<void> {
-    const courseLink = this.page.getByRole('link', { name: new RegExp(courseName, 'i') }).first();
-    const visible = await courseLink.isVisible({ timeout: 10000 }).catch(() => false);
+    const courseLink = this.page.getByRole('link', { name: this.textMatcher(courseName) }).first();
 
-    assertTrue(visible, `Expected course link "${courseName}" to be visible before navigation.`);
+    await uiExpect(courseLink, `Expected course link "${courseName}" to be visible before navigation.`).toBeVisible();
     await courseLink.click();
     await this.waitForReady();
   }
 
   async expectAssignmentVisible(assignmentName: string): Promise<void> {
-    const assignmentLink = this.page
-      .locator(courseSelectors.coursePage.assignmentLink)
-      .filter({ hasText: assignmentName })
-      .first();
-    const accessibleAssignment = this.page.getByRole('link', { name: new RegExp(assignmentName, 'i') }).first();
+    const accessibleAssignment = this.page.getByRole('link', { name: this.textMatcher(assignmentName) });
+    const legacyAssignment = this.page
+      .locator(courseLegacySelectors.coursePage.assignmentLink)
+      .filter({ hasText: this.textMatcher(assignmentName) });
+    const assignment = accessibleAssignment.or(legacyAssignment).first();
 
-    const visible =
-      (await assignmentLink.isVisible({ timeout: 10000 }).catch(() => false)) ||
-      (await accessibleAssignment.isVisible({ timeout: 2000 }).catch(() => false));
-
-    assertTrue(visible, `Expected controlled assignment "${assignmentName}" to be visible in the course.`);
+    await uiExpect(
+      assignment,
+      `Expected controlled assignment "${assignmentName}" to be visible in the course.`
+    ).toBeVisible();
   }
 
   private async expectCourseContext(courseName: string): Promise<void> {
-    const title = this.page.locator(courseSelectors.coursePage.courseTitle).filter({ hasText: courseName }).first();
-    const mainRegion = this.page.locator(courseSelectors.coursePage.mainRegion).filter({ hasText: courseName }).first();
+    const heading = this.page.getByRole('heading', { name: this.textMatcher(courseName) });
+    const legacyTitle = this.page
+      .locator(courseLegacySelectors.coursePage.courseTitle)
+      .filter({ hasText: this.textMatcher(courseName) });
+    const mainRegion = this.page
+      .locator(courseLegacySelectors.coursePage.mainRegion)
+      .filter({ hasText: this.textMatcher(courseName) });
+    const courseContext = heading.or(legacyTitle).or(mainRegion).first();
 
-    const visible =
-      (await title.isVisible({ timeout: 10000 }).catch(() => false)) ||
-      (await mainRegion.isVisible({ timeout: 2000 }).catch(() => false));
-
-    assertTrue(visible, `Expected controlled course page to show "${courseName}".`);
+    await uiExpect(courseContext, `Expected controlled course page to show "${courseName}".`).toBeVisible();
   }
 }

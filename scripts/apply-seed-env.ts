@@ -10,6 +10,7 @@ interface SeedArtifact {
       username?: string;
     };
     student?: {
+      id?: number | string;
       username?: string;
       displayName?: string;
     };
@@ -24,6 +25,9 @@ interface SeedArtifact {
     name?: string;
     url?: string;
     submissionsUrl?: string;
+  };
+  submission?: {
+    id?: number | string;
   };
   gradebook?: {
     url?: string;
@@ -53,12 +57,17 @@ const deterministicKeys = [
   'MOODLE_COURSE_URL',
   'MOODLE_ASSIGNMENT_NAME',
   'MOODLE_ASSIGNMENT_ID',
+  'MOODLE_STUDENT_ID',
+  'MOODLE_SUBMISSION_ID',
   'MOODLE_ASSIGNMENT_URL',
   'MOODLE_ASSIGNMENT_SUBMISSIONS_URL',
   'MOODLE_GRADEBOOK_URL',
   'MOODLE_TARGET_GRADE'
 ] as const;
 
+type DeterministicKey = (typeof deterministicKeys)[number];
+
+const deterministicKeySet = new Set<string>(deterministicKeys);
 const passwordKeys = ['MOODLE_TEACHER_PASSWORD', 'MOODLE_STUDENT_PASSWORD'] as const;
 
 function readSeedArtifact(): SeedArtifact {
@@ -79,14 +88,34 @@ function readSeedArtifact(): SeedArtifact {
   }
 }
 
-function requireValue(seed: SeedArtifact, key: (typeof deterministicKeys)[number]): string {
+function isSafeGeneratedMetadataKey(key: string): boolean {
+  return /^MOODLE_[A-Z0-9_]+$/.test(key) && !/(PASSWORD|TOKEN|SECRET|DB|EMAIL)/.test(key);
+}
+
+function keysToSync(seed: SeedArtifact): string[] {
+  const keys = new Set<string>(deterministicKeys);
+
+  for (const key of Object.keys(seed.envSnippet ?? {})) {
+    if (isSafeGeneratedMetadataKey(key)) {
+      keys.add(key);
+    }
+  }
+
+  return [...keys];
+}
+
+function requireValue(seed: SeedArtifact, key: string): string {
   const directValue = seed.envSnippet?.[key];
 
   if (directValue !== undefined && directValue !== '') {
     return directValue;
   }
 
-  const derived: Partial<Record<(typeof deterministicKeys)[number], string | number | undefined>> = {
+  if (!deterministicKeySet.has(key)) {
+    throw new Error(`Seed artifact is missing generated value for ${key}. Re-run npm run moodle:seed.`);
+  }
+
+  const derived: Partial<Record<DeterministicKey, string | number | undefined>> = {
     MOODLE_BASE_URL: seed.baseUrl,
     MOODLE_TEACHER_USERNAME: seed.users?.teacher?.username,
     MOODLE_STUDENT_USERNAME: seed.users?.student?.username,
@@ -96,12 +125,14 @@ function requireValue(seed: SeedArtifact, key: (typeof deterministicKeys)[number
     MOODLE_COURSE_URL: seed.course?.url,
     MOODLE_ASSIGNMENT_NAME: seed.assignment?.name,
     MOODLE_ASSIGNMENT_ID: seed.assignment?.cmid,
+    MOODLE_STUDENT_ID: seed.users?.student?.id,
+    MOODLE_SUBMISSION_ID: seed.submission?.id,
     MOODLE_ASSIGNMENT_URL: seed.assignment?.url,
     MOODLE_ASSIGNMENT_SUBMISSIONS_URL: seed.assignment?.submissionsUrl,
     MOODLE_GRADEBOOK_URL: seed.gradebook?.url,
     MOODLE_TARGET_GRADE: seed.gradebook?.targetGrade
   };
-  const value = derived[key];
+  const value = derived[key as DeterministicKey];
 
   if (value === undefined || String(value).trim() === '') {
     throw new Error(`Seed artifact is missing required value for ${key}. Re-run npm run moodle:seed.`);
@@ -126,7 +157,10 @@ function ensureEnvFile(): { created: boolean; backupPath?: string } {
 }
 
 function timestampForFile(): string {
-  return new Date().toISOString().replace(/\.\d{3}Z$/, '').replace(/:/g, '-');
+  return new Date()
+    .toISOString()
+    .replace(/\.\d{3}Z$/, '')
+    .replace(/:/g, '-');
 }
 
 function parseEnvLines(content: string): EnvLine[] {
@@ -146,10 +180,17 @@ function parseEnvLines(content: string): EnvLine[] {
 }
 
 function renderEnvLines(lines: EnvLine[]): string {
-  return `${lines.map((line) => line.raw).join('\n').replace(/\n+$/, '')}\n`;
+  return `${lines
+    .map((line) => line.raw)
+    .join('\n')
+    .replace(/\n+$/, '')}\n`;
 }
 
-function setEnvValue(lines: EnvLine[], key: string, value: string): { action: 'added' | 'changed' | 'unchanged'; previous?: string } {
+function setEnvValue(
+  lines: EnvLine[],
+  key: string,
+  value: string
+): { action: 'added' | 'changed' | 'unchanged'; previous?: string } {
   const existing = lines.find((line) => line.key === key);
 
   if (!existing) {
@@ -180,7 +221,7 @@ function applySeedEnv(): void {
   const unchangedKeys: string[] = [];
   const demoPasswordKeys: string[] = [];
 
-  for (const key of deterministicKeys) {
+  for (const key of keysToSync(seed)) {
     const value = requireValue(seed, key);
     const result = setEnvValue(lines, key, value);
 

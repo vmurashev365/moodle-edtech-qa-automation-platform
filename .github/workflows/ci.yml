@@ -20,14 +20,14 @@ jobs:
       MOODLE_STUDENT_PASSWORD: changeme
       MOODLE_MANAGER_USERNAME: manager.qa
       MOODLE_MANAGER_PASSWORD: changeme
-      MOODLE_API_TOKEN: ""
-      MOODLE_COURSE_NAME: "QA Automation Demo 101"
-      MOODLE_ASSIGNMENT_NAME: "Essay: Test Automation Strategy"
-      MOODLE_AUDIO_RESOURCE_NAME: "Sample Listening Task"
-      MOODLE_TARGET_GRADE: "82"
-      HEADLESS: "true"
-      TRACE_ON_FAILURE: "true"
-      VIDEO_ON_FAILURE: "false"
+      MOODLE_API_TOKEN: ''
+      MOODLE_COURSE_NAME: 'QA Automation Demo 101'
+      MOODLE_ASSIGNMENT_NAME: 'Essay: Test Automation Strategy'
+      MOODLE_AUDIO_RESOURCE_NAME: 'Sample Listening Task'
+      MOODLE_TARGET_GRADE: '82'
+      HEADLESS: 'true'
+      TRACE_ON_FAILURE: 'true'
+      VIDEO_ON_FAILURE: 'false'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "24.x"
+          node-version: '24.x'
           cache: npm
 
       - name: Install dependencies
@@ -49,6 +49,9 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Format check
+        run: npm run format:check
 
       - name: Verify environment contract
         run: npm run verify:env

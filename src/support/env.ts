@@ -4,6 +4,8 @@ dotenv.config();
 
 const localDemoUserPassword = 'QaDemo2026!';
 
+export type TraceMode = 'off' | 'retain-on-failure' | 'on';
+
 export interface TestEnv {
   baseUrl: string;
   adminUsername: string;
@@ -30,6 +32,7 @@ export interface TestEnv {
   studentDisplayName: string;
   readyTimeoutMs: number;
   headless: boolean;
+  traceMode: TraceMode;
   traceOnFailure: boolean;
   videoOnFailure: boolean;
 }
@@ -60,6 +63,24 @@ function readBoolean(name: string, fallback: boolean): boolean {
   return ['1', 'true', 'yes', 'on'].includes(value);
 }
 
+function readTraceMode(): TraceMode {
+  const rawMode = process.env.TRACE_MODE?.trim().toLowerCase();
+
+  if (rawMode === 'off' || rawMode === 'retain-on-failure' || rawMode === 'on') {
+    return rawMode;
+  }
+
+  if (rawMode === 'all') {
+    return 'on';
+  }
+
+  if (rawMode && rawMode !== '') {
+    return 'retain-on-failure';
+  }
+
+  return readBoolean('TRACE_ON_FAILURE', true) ? 'retain-on-failure' : 'off';
+}
+
 function readNumber(name: string, fallback: number): number {
   const value = process.env[name]?.trim();
 
@@ -72,6 +93,8 @@ function readNumber(name: string, fallback: number): number {
 }
 
 export function loadEnv(): TestEnv {
+  const traceMode = readTraceMode();
+
   return {
     baseUrl: readEnv('MOODLE_BASE_URL', 'http://localhost:8080'),
     adminUsername: readEnv('MOODLE_ADMIN_USERNAME', 'user'),
@@ -98,7 +121,8 @@ export function loadEnv(): TestEnv {
     studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
     readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
     headless: readBoolean('HEADLESS', true),
-    traceOnFailure: readBoolean('TRACE_ON_FAILURE', true),
+    traceMode,
+    traceOnFailure: traceMode !== 'off',
     videoOnFailure: readBoolean('VIDEO_ON_FAILURE', false)
   };
 }
@@ -168,6 +192,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       readyTimeoutMs: env.readyTimeoutMs,
       apiTokenConfigured: Boolean(env.apiToken),
       headless: env.headless,
+      traceMode: env.traceMode,
       traceOnFailure: env.traceOnFailure,
       videoOnFailure: env.videoOnFailure
     }

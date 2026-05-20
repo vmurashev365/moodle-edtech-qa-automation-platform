@@ -3,6 +3,7 @@
 Purpose: governance for contributors and AI-assisted contributions (Copilot, Codex, prompts) to preserve framework consistency and Cucumber-first architecture.
 
 Rules
+
 - This is a Cucumber-first framework. Feature files and the BDD vocabulary drive test scope and review.
 - Use Playwright as the browser automation engine inside Cucumber step definitions. Do not convert this repository into a plain Playwright Test runner architecture.
 - Preserve the Atomic → Domain → Composite BDD model when designing steps and features.
@@ -18,10 +19,12 @@ Rules
 - Hora and Moodle are portfolio implementations. Any private/local reference implementations must remain local-only and must not be presented as public evidence.
 
 Pull request guidance
+
 - Include test scope, environment, data setup, and evidence links in the PR description.
 - Link feature files, step changes, and any environment artifacts used by the PR.
 
 Versioning and change control
+
 - Document changes to BDD vocabulary in a changelog entry and update relevant docs and the evidence index.
 
 ## Local reference folders
