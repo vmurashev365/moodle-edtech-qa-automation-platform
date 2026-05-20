@@ -29,7 +29,7 @@ services:
       MOODLE_DATABASE_USER: ${MOODLE_DB_USER:-bn_moodle}
       MOODLE_DATABASE_PASSWORD: ${MOODLE_DB_PASSWORD:-changeme}
       MOODLE_DATABASE_NAME: ${MOODLE_DB_NAME:-bitnami_moodle}
-      MOODLE_USERNAME: ${MOODLE_ADMIN_USERNAME:-admin}
+      MOODLE_USERNAME: ${MOODLE_ADMIN_USERNAME:-user}
       MOODLE_PASSWORD: ${MOODLE_ADMIN_PASSWORD:-changeme}
       MOODLE_EMAIL: ${MOODLE_ADMIN_EMAIL:-admin@example.test}
       MOODLE_SITE_NAME: "Moodle EdTech QA Controlled"
@@ -37,6 +37,7 @@ services:
     volumes:
       - moodle_app_data:/bitnami/moodle
       - moodle_data:/bitnami/moodledata
+      - ./scripts/moodle:/qa-seed:ro
 
 volumes:
   moodle_mariadb_data:

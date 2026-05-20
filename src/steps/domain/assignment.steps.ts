@@ -1,7 +1,7 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import { AssignmentPage } from '../../pages/assignment/AssignmentPage';
 import type { MoodleWorld } from '../../support/custom-world';
-import { validateControlledDataReadiness } from '../../support/data-readiness';
+import { validateControlledDataReadiness, validateControlledGradingReadiness } from '../../support/data-readiness';
 import { pendingImplementation } from '../../utils/assertions';
 
 Given('the controlled course has a submitted assignment ready for grading', async function () {
@@ -15,6 +15,17 @@ Given('controlled Moodle test data exists', async function (this: MoodleWorld) {
     throw new Error(
       `Controlled Moodle test data is not ready for Phase 5: ${readiness.errors.join(' ')} ` +
         'Use the manual seed checklist in docs/TEST_DATA_STRATEGY.md, then set the required .env IDs or URLs.'
+    );
+  }
+});
+
+Given('controlled Moodle grading test data exists', async function (this: MoodleWorld) {
+  const readiness = validateControlledGradingReadiness(this.env);
+
+  if (!readiness.ok) {
+    throw new Error(
+      `Controlled Moodle grading data is not ready for Phase 6: ${readiness.errors.join(' ')} ` +
+        'Seed the controlled course, assignment, Student QA submission, submissions URL/ID, and gradebook URL/ID before removing @wip.'
     );
   }
 });
@@ -37,6 +48,17 @@ When('the teacher opens assignment submissions for {string}', async function (as
 When('I open the submissions view', async function (this: MoodleWorld) {
   const assignmentPage = new AssignmentPage(this.requirePage());
   await assignmentPage.openSubmissions(this.env);
+});
+
+When('I open the controlled assignment submissions page', async function (this: MoodleWorld) {
+  const assignmentPage = new AssignmentPage(this.requirePage());
+  await assignmentPage.openSubmissions(this.env);
+  await assignmentPage.expectDeterministicSubmissionVisible(this.env);
+});
+
+When('I grade the deterministic student submission with the target grade', async function (this: MoodleWorld) {
+  const assignmentPage = new AssignmentPage(this.requirePage());
+  await assignmentPage.gradeDeterministicSubmissionWithTargetGrade(this.env);
 });
 
 When('the teacher grades the deterministic submission as {string}', async function (grade: string) {

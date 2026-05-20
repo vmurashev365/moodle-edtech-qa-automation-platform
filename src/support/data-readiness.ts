@@ -56,6 +56,33 @@ export function resolveAssignmentSubmissionsUrl(env: TestEnv = loadEnv()): strin
   return url.toString();
 }
 
+function courseIdFromUrl(env: TestEnv): string | undefined {
+  if (!hasValue(env.courseUrl)) {
+    return undefined;
+  }
+
+  try {
+    const url = new URL(env.courseUrl, env.baseUrl);
+    return url.searchParams.get('id') ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export function resolveGradebookUrl(env: TestEnv = loadEnv()): string | undefined {
+  if (hasValue(env.gradebookUrl)) {
+    return env.gradebookUrl;
+  }
+
+  const courseId = hasValue(env.courseId) ? env.courseId : courseIdFromUrl(env);
+
+  if (courseId) {
+    return makeUrl(`/grade/report/grader/index.php?id=${encodeURIComponent(courseId)}`, env);
+  }
+
+  return undefined;
+}
+
 export function studentSubmissionSearchTerms(env: TestEnv = loadEnv()): string[] {
   return [env.studentDisplayName, env.studentUsername, env.studentId].filter(hasValue);
 }
@@ -125,6 +152,44 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       studentSearchTermCount: studentTerms.length,
       apiTokenConfigured: Boolean(env.apiToken)
+    }
+  };
+}
+
+export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): ControlledDataReadinessResult {
+  const baseReadiness = validateControlledDataReadiness(env);
+  const errors = [...baseReadiness.errors];
+  const warnings = [...baseReadiness.warnings];
+  const submissionsUrl = resolveAssignmentSubmissionsUrl(env);
+  const gradebookUrl = resolveGradebookUrl(env);
+
+  if (!submissionsUrl) {
+    errors.push(
+      'Set MOODLE_ASSIGNMENT_SUBMISSIONS_URL, MOODLE_ASSIGNMENT_ID, or MOODLE_ASSIGNMENT_URL before running Phase 6 grading.'
+    );
+  }
+
+  if (!gradebookUrl) {
+    errors.push('Set MOODLE_GRADEBOOK_URL, MOODLE_COURSE_ID, or MOODLE_COURSE_URL before running Phase 6 gradebook validation.');
+  }
+
+  if (!Number.isFinite(env.targetGrade)) {
+    errors.push('MOODLE_TARGET_GRADE must be numeric before running Phase 6 grading.');
+  }
+
+  if (!hasValue(env.apiToken)) {
+    warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
+  }
+
+  return {
+    ok: errors.length === 0,
+    errors,
+    warnings,
+    summary: {
+      ...baseReadiness.summary,
+      submissionsNavigationReady: Boolean(submissionsUrl),
+      gradebookNavigationReady: Boolean(gradebookUrl),
+      targetGrade: env.targetGrade
     }
   };
 }

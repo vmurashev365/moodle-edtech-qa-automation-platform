@@ -34,7 +34,9 @@ export class LoginPage extends BasePage {
     }
 
     await username.fill(credentials.username);
-    await password.fill(credentials.password);
+    await password.fill('');
+    await password.click();
+    await this.page.keyboard.type(credentials.password);
     await submit.click();
     await this.waitForReady();
     await this.expectAuthenticated();
@@ -43,11 +45,15 @@ export class LoginPage extends BasePage {
   async expectAuthenticated(): Promise<void> {
     const userMenu = this.page.locator(authSelectors.authenticatedPage.userMenu).first();
     const dashboardLink = this.page.locator(authSelectors.authenticatedPage.dashboardLink).first();
+    const loginForm = this.page.locator(authSelectors.loginPage.loginForm).first();
 
-    if (
-      (await userMenu.isVisible({ timeout: 10000 }).catch(() => false)) ||
-      (await dashboardLink.isVisible({ timeout: 2000 }).catch(() => false))
-    ) {
+    if (await userMenu.isVisible({ timeout: 10000 }).catch(() => false)) {
+      return;
+    }
+
+    const loginFormVisible = await loginForm.isVisible({ timeout: 1000 }).catch(() => false);
+
+    if (!loginFormVisible && (await dashboardLink.isVisible({ timeout: 2000 }).catch(() => false))) {
       return;
     }
 

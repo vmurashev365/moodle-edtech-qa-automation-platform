@@ -1,3 +1,5 @@
+import type { TestEnv } from '../../support/env';
+import { resolveGradebookUrl } from '../../support/data-readiness';
 import { gradebookSelectors } from '../../ui-map/gradebook.selectors';
 import { BasePage } from '../base/BasePage';
 
@@ -12,5 +14,24 @@ export class GradebookPage extends BasePage {
     void username;
     void grade;
     this.pendingSelectors('gradebook student grade assertion');
+  }
+
+  async openControlledGradebook(env: TestEnv): Promise<void> {
+    const gradebookUrl = resolveGradebookUrl(env);
+
+    if (!gradebookUrl) {
+      throw new Error('Controlled gradebook navigation is not configured. Set MOODLE_GRADEBOOK_URL or MOODLE_COURSE_ID.');
+    }
+
+    void gradebookSelectors;
+    await this.gotoUrl(gradebookUrl);
+  }
+
+  async expectTargetGradeForDeterministicStudent(env: TestEnv): Promise<void> {
+    void env;
+    void gradebookSelectors;
+    this.pendingSelectors(
+      'Phase 6 gradebook grade assertion. Controlled gradebook selectors must be verified before removing @wip.'
+    );
   }
 }

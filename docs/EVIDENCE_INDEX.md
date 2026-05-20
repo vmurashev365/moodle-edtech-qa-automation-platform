@@ -7,6 +7,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 ## Live reports
 - Allure report: TBD
+- Local Allure report: can be generated from local runs with `npm run report:allure`; ignored locally and not published
 - GitHub Actions run: Available in repository Actions tab
 - CI artifact: framework-validation-reports
 
@@ -14,11 +15,11 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - 3–5 minute walkthrough: TBD
 
 ## Moodle evidence
-- Controlled Moodle setup: Docker Compose available; manual seed checklist documented; seeded evidence TBD
+- Controlled Moodle setup: Docker Compose available; `npm run moodle:seed` creates deterministic local users/course/assignment/enrolments/submission; `npm run moodle:seed:env` applies generated metadata to untracked local `.env`; generated local artifact is ignored and not public proof by itself
 - Phase 4 local controlled Moodle smoke: implemented and passed locally; public report/screenshot link TBD
-- Phase 5 local teacher submission review: implemented for manual-seeded controlled Moodle; currently blocked locally until course URL/ID and seed data are configured; public report/screenshot link TBD
+- Phase 5 local teacher submission review: implemented for controlled seeded Moodle; run `npm run moodle:seed:ready` or run seed plus `.env` sync before the workflow; public report/screenshot link TBD
 - Mount Orange recorder findings: planned only for recon, not CI
-- Full teacher assignment grading E2E: Phase 6 planned/TBD
+- Full teacher assignment grading E2E: Phase 6 WIP/blocked until grading and gradebook selectors are verified
 - First API coverage beyond safe preflight: TBD
 
 ## Phase 3 automation skeleton
@@ -32,13 +33,20 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 ## Phase 4 local smoke
 - Controlled Moodle wait script: Ready
 - Local login page smoke: Passed locally with `npm run test:local:smoke`
-- Teacher/student/course/assignment provisioning: Manual seed required for Phase 5
+- Teacher/student/course/assignment provisioning: deterministic local seed available with `npm run moodle:seed`; `.env` synchronization available with `npm run moodle:seed:env`
 
 ## Phase 5 local teacher workflow
 - Controlled data readiness check: Ready with `npm run check:data`
-- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; blocked until manual seed values are configured
+- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data and generated `.env` URLs
 - Seed evidence and public Allure report: TBD
 - Grading and gradebook reconciliation: Phase 6
+
+## Phase 6 grading / gradebook workflow
+- Grading readiness check: Ready with `npm run check:grading-data`
+- Local grading command: Added as `npm run test:local:grading`
+- Current status: Seed data can be created locally; grading scenario remains `@wip` pending selector verification
+- Next step: Recorder/Codegen selector discovery against the seeded local Moodle instance
+- Public Allure report/demo evidence: TBD
 
 ## Phase 2 design artifacts
 - [Traceability Matrix](TRACEABILITY_MATRIX.md): Ready

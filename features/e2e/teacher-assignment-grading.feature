@@ -1,10 +1,12 @@
-@e2e @teacher @student @assignment @gradebook @controlled-moodle @phase6 @wip
+@e2e @teacher @student @assignment @gradebook @controlled-moodle @local @phase6 @wip
 Feature: Teacher assignment grading
   The controlled Moodle workflow should protect grade save and gradebook reconciliation.
 
-  @smoke
   Scenario: Teacher grades deterministic student submission and gradebook reflects grade
-    Given the controlled course has a submitted assignment ready for grading
-    And teacher "teacher.qa" is signed in
-    When the teacher grades the deterministic submission as "82 / 100"
-    Then the assignment grade and gradebook grade are reconciled for student "student.qa"
+    Given the controlled Moodle instance is available
+    And controlled Moodle grading test data exists
+    When I log in as the configured teacher user
+    And I open the controlled assignment submissions page
+    And I grade the deterministic student submission with the target grade
+    And I open the controlled gradebook
+    Then the gradebook should show the target grade for the deterministic student

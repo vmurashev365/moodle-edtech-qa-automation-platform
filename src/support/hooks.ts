@@ -1,7 +1,9 @@
-import { After, Before, BeforeAll, Status, type ITestCaseHookParameter } from '@cucumber/cucumber';
+import { After, Before, BeforeAll, Status, setDefaultTimeout, type ITestCaseHookParameter } from '@cucumber/cucumber';
 import * as fs from 'node:fs';
 import { attachScreenshotOnFailure } from '../utils/evidence';
 import type { MoodleWorld } from './custom-world';
+
+setDefaultTimeout(30000);
 
 BeforeAll(function () {
   for (const directory of ['reports/cucumber', 'reports/allure-results', 'screenshots', 'videos', 'traces']) {

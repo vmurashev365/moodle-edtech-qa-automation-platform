@@ -11,7 +11,7 @@ Test objectives
 
 Scope
 - MVP target covers authentication, teacher dashboard, course access, assignment page, student submission lifecycle, teacher grading, and gradebook validation.
-- Current implemented scope covers static framework validation, safe API preflight, Phase 4 local login-page smoke, and a Phase 5 manual-seed teacher submission-review workflow that is blocked until controlled seed data and URLs/IDs are configured.
+- Current implemented scope covers static framework validation, safe API preflight, Phase 4 local login-page smoke, a Phase 5 manual-seed teacher submission-review workflow, and a Phase 6 grading readiness gate. Phase 5/6 live workflows remain blocked until controlled seed data, URLs/IDs, and grading/gradebook selectors are configured.
 
 Out of scope (MVP)
 - Performance/load testing beyond smoke checks
@@ -107,7 +107,8 @@ Schedule / phased delivery
 - Phase 3: automation skeleton and controlled Moodle setup: package/config, Cucumber/Playwright structure, feature files, page objects, API helper skeleton, CI skeleton
 - Phase 4: local controlled Moodle login-page smoke
 - Phase 5: manual-seed teacher submission-review workflow; blocked until controlled seed data and URLs/IDs are configured
-- Phase 6: API-backed seeding/reset, grading/gradebook reconciliation, security/media checks, and published evidence
+- Phase 6: grading/gradebook readiness gate and WIP target scenario; full proof remains blocked until seed/selectors are verified
+- Later: API-backed seeding/reset, security/media checks, and published evidence
 
 Approval / completion criteria
 - Stakeholder sign-off on MVP test scope and target evidence model

@@ -1,4 +1,6 @@
 import { Given, Then, When } from '@cucumber/cucumber';
+import { GradebookPage } from '../../pages/gradebook/GradebookPage';
+import type { MoodleWorld } from '../../support/custom-world';
 import { pendingImplementation } from '../../utils/assertions';
 
 Given('student {string} has grade {string} for {string}', async function (
@@ -30,3 +32,13 @@ Then(
     pendingImplementation('assignment and gradebook API/UI reconciliation is pending controlled Moodle setup.');
   }
 );
+
+When('I open the controlled gradebook', async function (this: MoodleWorld) {
+  const gradebookPage = new GradebookPage(this.requirePage());
+  await gradebookPage.openControlledGradebook(this.env);
+});
+
+Then('the gradebook should show the target grade for the deterministic student', async function (this: MoodleWorld) {
+  const gradebookPage = new GradebookPage(this.requirePage());
+  await gradebookPage.expectTargetGradeForDeterministicStudent(this.env);
+});

@@ -8,6 +8,8 @@ import { assignmentSelectors } from '../../ui-map/assignment.selectors';
 import { assertTrue } from '../../utils/assertions';
 import { BasePage } from '../base/BasePage';
 
+const deterministicSubmissionText = 'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';
+
 export class AssignmentPage extends BasePage {
   async openControlledAssignment(env: TestEnv): Promise<void> {
     const assignmentUrl = resolveAssignmentUrl(env);
@@ -64,20 +66,46 @@ export class AssignmentPage extends BasePage {
   }
 
   async expectDeterministicSubmissionVisible(env: TestEnv): Promise<void> {
-    const searchTerms = studentSubmissionSearchTerms(env);
+    const searchTerms = [...studentSubmissionSearchTerms(env), deterministicSubmissionText];
+    const foundInRenderedText = await this.page
+      .waitForFunction((terms) => terms.some((term) => document.body.innerText.includes(term)), searchTerms, { timeout: 10000 })
+      .then(() => true)
+      .catch(() => false);
+
+    if (foundInRenderedText) {
+      return;
+    }
+
+    const bodyText = (await this.page.locator('body').textContent({ timeout: 1000 }).catch(() => ''))?.trim() ?? '';
+
+    if (searchTerms.some((term) => bodyText.includes(term))) {
+      return;
+    }
 
     for (const term of searchTerms) {
-      const visible = await this.page.getByText(term, { exact: false }).first().isVisible({ timeout: 5000 }).catch(() => false);
+      const matches = this.page.getByText(term, { exact: false });
+      const count = await matches.count().catch(() => 0);
 
-      if (visible) {
-        return;
+      for (let index = 0; index < Math.min(count, 10); index += 1) {
+        const visible = await matches.nth(index).isVisible({ timeout: 500 }).catch(() => false);
+
+        if (visible) {
+          return;
+        }
       }
     }
 
-    const tableText = (await this.page.locator(assignmentSelectors.assignmentPage.submissionsTable).first().textContent().catch(() => ''))?.trim();
+    const tableText = (
+      await this.page
+        .locator(assignmentSelectors.assignmentPage.submissionsTable)
+        .first()
+        .textContent({ timeout: 1000 })
+        .catch(() => '')
+    )?.trim();
 
     throw new Error(
       `Expected deterministic student submission to be visible using one of: ${searchTerms.join(', ')}. ` +
+        `Current page text sample: ${bodyText.slice(0, 300)} ` +
         `Current submissions table text sample: ${(tableText ?? '').slice(0, 300)}`
     );
   }
@@ -86,6 +114,13 @@ export class AssignmentPage extends BasePage {
     void username;
     void grade;
     this.pendingSelectors('teacher grading workflow');
+  }
+
+  async gradeDeterministicSubmissionWithTargetGrade(env: TestEnv): Promise<void> {
+    void env;
+    this.pendingSelectors(
+      'Phase 6 teacher grading workflow. Controlled Moodle seed data and grading selectors must be verified before removing @wip.'
+    );
   }
 
   private async expectAssignmentContext(assignmentName: string): Promise<void> {

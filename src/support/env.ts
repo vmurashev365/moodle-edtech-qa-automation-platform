@@ -2,6 +2,8 @@ import * as dotenv from 'dotenv';
 
 dotenv.config();
 
+const localDemoUserPassword = 'QaDemo2026!';
+
 export interface TestEnv {
   baseUrl: string;
   adminUsername: string;
@@ -43,6 +45,11 @@ function readEnv(name: string, fallback: string): string {
   return process.env[name]?.trim() || fallback;
 }
 
+function readSeededUserPassword(name: string): string {
+  const value = readEnv(name, localDemoUserPassword);
+  return value === 'changeme' ? localDemoUserPassword : value;
+}
+
 function readBoolean(name: string, fallback: boolean): boolean {
   const value = process.env[name]?.trim().toLowerCase();
 
@@ -67,12 +74,12 @@ function readNumber(name: string, fallback: number): number {
 export function loadEnv(): TestEnv {
   return {
     baseUrl: readEnv('MOODLE_BASE_URL', 'http://localhost:8080'),
-    adminUsername: readEnv('MOODLE_ADMIN_USERNAME', 'admin'),
+    adminUsername: readEnv('MOODLE_ADMIN_USERNAME', 'user'),
     adminPassword: readEnv('MOODLE_ADMIN_PASSWORD', 'changeme'),
     teacherUsername: readEnv('MOODLE_TEACHER_USERNAME', 'teacher.qa'),
-    teacherPassword: readEnv('MOODLE_TEACHER_PASSWORD', 'changeme'),
+    teacherPassword: readSeededUserPassword('MOODLE_TEACHER_PASSWORD'),
     studentUsername: readEnv('MOODLE_STUDENT_USERNAME', 'student.qa'),
-    studentPassword: readEnv('MOODLE_STUDENT_PASSWORD', 'changeme'),
+    studentPassword: readSeededUserPassword('MOODLE_STUDENT_PASSWORD'),
     managerUsername: readEnv('MOODLE_MANAGER_USERNAME', 'manager.qa'),
     managerPassword: readEnv('MOODLE_MANAGER_PASSWORD', 'changeme'),
     apiToken: readEnv('MOODLE_API_TOKEN', ''),

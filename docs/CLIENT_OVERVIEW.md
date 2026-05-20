@@ -20,7 +20,8 @@ To demonstrate a repeatable, risk-focused QA automation approach for EdTech plat
 ## Workflows covered or planned
 - Phase 4 local smoke: controlled Moodle login page reachability.
 - Phase 5 local workflow: teacher submission review against manually seeded controlled data.
-- Planned next coverage: teacher grading, gradebook validation, role-based access, selected media/audio resource checks, and API-backed test data setup/backend validation.
+- Phase 6 target workflow: teacher grading and gradebook validation; currently blocked until controlled grading seed data and selectors are verified.
+- Planned next coverage: role-based access, selected media/audio resource checks, and API-backed test data setup/backend validation.
 
 ## User roles covered
 - teacher

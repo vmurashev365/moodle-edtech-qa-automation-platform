@@ -30,7 +30,39 @@ Phase 5 adds the first teacher-facing local workflow path:
 - open the submissions view
 - assert the deterministic student submission is visible
 
-Data setup is manual for now because Moodle Web Services and seed permissions are not yet verified in the controlled instance. Grading and gradebook reconciliation remain Phase 6 scope unless the local instance is seeded and verified earlier.
+Data setup now uses the Phase 6A.1 local seed command below. Grading and gradebook reconciliation remain Phase 6 scope until selector discovery and grade save behavior are verified.
+
+## Phase 6A.1 controlled seed status
+Phase 6A.1 adds a deterministic local Moodle seed command:
+
+- runs inside the local Docker Moodle container
+- uses Moodle internal APIs for users, course creation, manual enrolment, assignment creation/update, and online text submission setup
+- creates or updates `teacher.qa`, `student.qa`, `QA Automation Demo 101`, `Essay: Test Automation Strategy`, enrolments, and the deterministic student submission
+- writes generated course, assignment, submissions, and gradebook URLs to a local seed artifact
+- applies generated IDs and URLs to the untracked local `.env` with `npm run moodle:seed:env`
+- writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`
+
+`npm run moodle:seed:env` creates `.env` from `.env.example` if needed and creates a timestamped `.env.backup.*` before editing an existing `.env`. Generated URLs use Moodle's configured local `wwwroot` so browser sessions stay on the host Moodle expects. The seed artifact is local setup evidence only. It is not public proof by itself. Recorder/Codegen selector discovery and grading selector implementation come after seed readiness passes.
+
+## Current Status
+Implemented:
+
+- static GitHub Actions validation
+- controlled Moodle login-page smoke
+- Phase 5 submission-review foundation with controlled seed readiness checks
+- Phase 6A.1 local controlled Moodle seed and safe `.env` sync commands
+
+Blocked / WIP:
+
+- Phase 6 grading and gradebook flow until submissions navigation, gradebook navigation, and grading selectors are verified
+- next immediate step: Recorder/Codegen selector discovery against the seeded local Moodle instance
+
+Planned:
+
+- API-backed reset and backend validation
+- role negative test
+- audio/media test
+- public Allure report and demo video
 
 ## Planned technology stack
 - Playwright
@@ -99,11 +131,25 @@ Start or stop the local controlled Moodle stack:
 ```bash
 npm run moodle:start
 npm run moodle:wait
-npm run test:local:smoke
+npm run moodle:seed
+npm run moodle:seed:env
 npm run check:data
+npm run check:grading-data
 npm run test:local:teacher-workflow
 npm run moodle:stop
 ```
+
+Convenience readiness path:
+
+```bash
+npm run moodle:start
+npm run moodle:wait
+npm run moodle:seed:ready
+npm run test:local:teacher-workflow
+npm run moodle:stop
+```
+
+`test:local:grading` remains a Phase 6 `@wip` gate and is not part of the seed-readiness proof.
 
 Validate the skeleton:
 
@@ -122,6 +168,13 @@ npm run test:wip
 `@wip` scenarios are expected to fail with explicit pending implementation messages until Moodle selectors and API functions are confirmed.
 
 GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
+
+Prepare a clean review archive from Git history rather than local generated artifacts:
+
+```bash
+git status --short
+git archive --format=zip --output ../moodle-edtech-qa-automation-platform-clean.zip HEAD
+```
 
 ## Why this matters for EdTech teams
 Teacher workflows (assignment lifecycle, grading, gradebook reconciliation) are directly tied to student outcomes. Detecting regressions early and proving gradebook integrity protects learners and institutional reporting.
@@ -158,7 +211,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: current UI and E2E workflows beyond the Phase 5 submission-review path are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. Phase 6 adds API-backed seeding, grading/gradebook reconciliation, role-negative checks, and media validation.
+Note: current UI and E2E workflows beyond the Phase 5 submission-review path are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. The Docker image defaults remain configurable; pinning the Moodle image is deferred until the seeded local workflow is proven against a specific version.
 
 ---
-Last updated: Phase 5 (manual-seed teacher submission review workflow)
+Last updated: Phase 6 readiness gate for grading/gradebook workflow

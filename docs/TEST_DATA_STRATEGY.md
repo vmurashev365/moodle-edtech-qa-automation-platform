@@ -108,7 +108,7 @@ Recommended controls:
 | Test data pollution changes gradebook or submission state. | Reset deterministic records before mutation and clean up temporary data after runs. |
 | User permissions drift from expected roles. | API preflight verifies enrolments and required capabilities before UI execution. |
 | Assignment grade scale changes. | Preflight confirms the assignment supports `82 / 100` or maps the stable vocabulary to the configured scale. |
-| Moodle Web Services are not enabled or do not expose required operations. | Mark affected helpers as blocked by environment and document manual seed steps until enabled. |
+| Moodle Web Services are not enabled or do not expose required operations. | Use the local Docker internal seed for baseline data and mark Web Service-specific helpers as blocked until enabled. |
 | Secrets leak into docs or repo. | Use environment variables or CI secrets; never commit `.env`, tokens, screenshots with credentials, or generated artifacts. |
 
 ## Phase 2 / Phase 3 Implementation Notes
@@ -122,20 +122,42 @@ Phase 3 should implement the smallest useful data helper layer first:
 - Submission and grade reset/assertion.
 - Gradebook reconciliation.
 
-If the controlled environment cannot support API mutation immediately, Phase 3 may begin with API validation plus documented manual seed preparation, with mutation helpers added after Web Services are configured.
+If the controlled environment cannot support Web Service mutation immediately, keep Web Service helpers scoped to validation and use the local Docker internal seed for the baseline data this repository owns.
 
 ## Phase 4 / Phase 5 Provisioning Note
 Phase 4 introduces a local login-page smoke that verifies Moodle reachability and the login form only. It does not require seeded teacher/student users, course, assignment, submission, or grade data.
 
-Phase 5 uses manual controlled seed data until Moodle Web Services are verified. Before running `npm run test:local:teacher-workflow`, create or confirm:
+Phase 5 can now use the local controlled seed command instead of manual setup:
 
-- controlled teacher, student, and manager/admin users
+```bash
+npm run moodle:start
+npm run moodle:wait
+npm run moodle:seed
+npm run moodle:seed:env
+```
+
+The seed runs inside the Docker Moodle container and uses Moodle internal APIs for user creation/update, course creation/update, manual enrolments, assignment creation/update, and online text submission setup. It creates or confirms:
+
+- controlled teacher and student users
 - student username `student.qa` with display name `Student QA` or the exact configured `MOODLE_STUDENT_DISPLAY_NAME`
 - `QA Automation Demo 101`
 - `Essay: Test Automation Strategy`
 - deterministic student submission
 - teacher and student enrolments in the controlled course
-- `.env` values for `MOODLE_COURSE_ID` or `MOODLE_COURSE_URL`
-- optional `.env` values for assignment/submissions URLs or IDs when known
+- generated local `.env` values for course, assignment, submissions, gradebook, student display name, and target grade
 
-The Phase 5 workflow reviews the deterministic submission from the teacher perspective. Grade entry, gradebook reconciliation, API-backed seed, teardown, and backend validation remain Phase 6 work unless the controlled instance is configured and verified earlier.
+The seed writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`. `npm run moodle:seed:env` explicitly applies that metadata to the untracked local `.env`, creating `.env` from `.env.example` if needed and creating a timestamped `.env.backup.*` before editing an existing file. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance. That generated artifact is useful for local setup and review, but it is not public proof by itself. The Phase 5 workflow reviews the deterministic submission from the teacher perspective. Grade entry, gradebook reconciliation, teardown, and backend validation remain Phase 6 work unless explicitly implemented and verified.
+
+## Phase 6 Grading / Gradebook Readiness
+Phase 6 targets the business-critical teacher grading and gradebook reconciliation path, but the flow must remain blocked until the local controlled Moodle instance contains:
+
+- deterministic `Student QA` submission visible to the teacher
+- configured assignment submissions URL or assignment module ID
+- configured gradebook URL or course ID
+- assignment grade scale that accepts the configured target grade, default `82`
+- manually verified teacher permission to save grades
+- manually verified gradebook display for `Student QA`
+
+Use `npm run moodle:seed`, `npm run moodle:seed:env`, then `npm run check:grading-data` before attempting the grading workflow. The seed creates the ungraded deterministic submission needed for selector discovery; it does not pre-grade the submission. Recorder/Codegen selector discovery comes after seed readiness passes.
+
+GitHub Actions remains static/safe and does not start Moodle, run live Moodle E2E, or publish generated local seed artifacts.
