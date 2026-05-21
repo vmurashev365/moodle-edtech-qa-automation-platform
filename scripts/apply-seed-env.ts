@@ -13,6 +13,7 @@ interface SeedArtifact {
       id?: number | string;
       username?: string;
       displayName?: string;
+      email?: string;
     };
   };
   course?: {
@@ -25,6 +26,7 @@ interface SeedArtifact {
     name?: string;
     url?: string;
     submissionsUrl?: string;
+    gradingUrl?: string;
   };
   submission?: {
     id?: number | string;
@@ -58,9 +60,11 @@ const deterministicKeys = [
   'MOODLE_ASSIGNMENT_NAME',
   'MOODLE_ASSIGNMENT_ID',
   'MOODLE_STUDENT_ID',
+  'MOODLE_STUDENT_EMAIL',
   'MOODLE_SUBMISSION_ID',
   'MOODLE_ASSIGNMENT_URL',
   'MOODLE_ASSIGNMENT_SUBMISSIONS_URL',
+  'MOODLE_ASSIGNMENT_GRADING_URL',
   'MOODLE_GRADEBOOK_URL',
   'MOODLE_TARGET_GRADE'
 ] as const;
@@ -126,9 +130,11 @@ function requireValue(seed: SeedArtifact, key: string): string {
     MOODLE_ASSIGNMENT_NAME: seed.assignment?.name,
     MOODLE_ASSIGNMENT_ID: seed.assignment?.cmid,
     MOODLE_STUDENT_ID: seed.users?.student?.id,
+    MOODLE_STUDENT_EMAIL: seed.users?.student?.email,
     MOODLE_SUBMISSION_ID: seed.submission?.id,
     MOODLE_ASSIGNMENT_URL: seed.assignment?.url,
     MOODLE_ASSIGNMENT_SUBMISSIONS_URL: seed.assignment?.submissionsUrl,
+    MOODLE_ASSIGNMENT_GRADING_URL: seed.assignment?.gradingUrl,
     MOODLE_GRADEBOOK_URL: seed.gradebook?.url,
     MOODLE_TARGET_GRADE: seed.gradebook?.targetGrade
   };

@@ -73,6 +73,7 @@ $teacherpassword = seed_env('MOODLE_TEACHER_PASSWORD', 'changeme');
 $studentusername = seed_env('MOODLE_STUDENT_USERNAME', 'student.qa');
 $studentpassword = seed_env('MOODLE_STUDENT_PASSWORD', 'changeme');
 $studentdisplayname = seed_env('MOODLE_STUDENT_DISPLAY_NAME', 'Student QA');
+$studentemail = seed_env('MOODLE_STUDENT_EMAIL', 'student.qa@example.test');
 $coursename = seed_env('MOODLE_COURSE_NAME', 'QA Automation Demo 101');
 $assignmentname = seed_env('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy');
 $targetgrade = (int) seed_env('MOODLE_TARGET_GRADE', '82');
@@ -107,7 +108,7 @@ try {
         $studentusername,
         $studentfirstname,
         $studentlastname,
-        'student.qa@example.test',
+        $studentemail,
         $studentpassword
     );
     $course = seed_upsert_course($coursename, $courseshortname, $courseidnumber);
@@ -119,10 +120,12 @@ try {
 
     $assignment = seed_upsert_assignment($course, $assignmentname);
     $assignment['submission'] = seed_ensure_online_text_submission($course, $assignment['cm'], $student, $submissiontext);
+    $gradebaseline = seed_reset_grade_to_ungraded($course, $assignment['cm'], $student);
 
     $courseurl = seed_build_url($baseurl, "/course/view.php?id={$course->id}");
     $assignmenturl = seed_build_url($baseurl, "/mod/assign/view.php?id={$assignment['cm']->id}");
     $submissionsurl = $assignmenturl . '&action=grading';
+    $assignmentgradingurl = $assignmenturl . '&action=grader&userid=' . (int) $student->id;
     $gradebookurl = seed_build_url($baseurl, "/grade/report/grader/index.php?id={$course->id}");
 
     $output = [
@@ -155,6 +158,7 @@ try {
             'name' => $assignment['assign']->name,
             'url' => $assignmenturl,
             'submissionsUrl' => $submissionsurl,
+            'gradingUrl' => $assignmentgradingurl,
             'maxGrade' => 100,
         ],
         'submission' => [
@@ -165,15 +169,18 @@ try {
         'gradebook' => [
             'url' => $gradebookurl,
             'targetGrade' => $targetgrade,
+            'baseline' => $gradebaseline,
         ],
         'envSnippet' => [
             'MOODLE_COURSE_ID' => (string) $course->id,
             'MOODLE_ASSIGNMENT_ID' => (string) $assignment['cm']->id,
             'MOODLE_STUDENT_ID' => (string) $student->id,
+            'MOODLE_STUDENT_EMAIL' => $student->email,
             'MOODLE_SUBMISSION_ID' => (string) $assignment['submission']->id,
             'MOODLE_COURSE_URL' => $courseurl,
             'MOODLE_ASSIGNMENT_URL' => $assignmenturl,
             'MOODLE_ASSIGNMENT_SUBMISSIONS_URL' => $submissionsurl,
+            'MOODLE_ASSIGNMENT_GRADING_URL' => $assignmentgradingurl,
             'MOODLE_GRADEBOOK_URL' => $gradebookurl,
             'MOODLE_STUDENT_DISPLAY_NAME' => fullname($student),
             'MOODLE_TARGET_GRADE' => (string) $targetgrade,
@@ -469,4 +476,42 @@ function seed_ensure_online_text_submission(
 
     $submission = $assignment->get_user_submission($student->id, false);
     return $submission;
+}
+
+function seed_reset_grade_to_ungraded(stdClass $course, stdClass $cm, stdClass $student): array {
+    global $USER;
+
+    $admin = $USER;
+    $context = context_module::instance($cm->id);
+    $assignment = new assign($context, $cm, $course);
+
+    // Prefer Moodle's assign grading API over deleting grade rows; it keeps assign_grades and gradebook state aligned.
+    $data = (object) [
+        'grade' => '-1',
+        'attemptnumber' => -1,
+        'addattempt' => 0,
+        'sendstudentnotifications' => false,
+        'assignfeedbackcomments_editor' => [
+            'text' => '',
+            'format' => FORMAT_HTML,
+            'itemid' => 0,
+        ],
+    ];
+
+    $assignment->save_grade((int) $student->id, $data);
+
+    $assignrecord = clone $assignment->get_instance();
+    $assignrecord->cmidnumber = $cm->idnumber;
+    assign_update_grades($assignrecord, (int) $student->id);
+
+    \core\session\manager::set_user($admin);
+    $USER = $admin;
+
+    $grade = $assignment->get_user_grade((int) $student->id, true);
+
+    return [
+        'mode' => 'ungraded',
+        'assignGrade' => (float) $grade->grade,
+        'expectedBeforeUiGrade' => 'not graded',
+    ];
 }

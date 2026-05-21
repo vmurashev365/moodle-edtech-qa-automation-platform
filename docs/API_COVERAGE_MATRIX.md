@@ -46,7 +46,7 @@ Planned groups:
 | Assignments                  | Confirm assignment grade scale supports planned grade.                     | Assignment accepts `82 / 100` or equivalent configured scale.            | Grading workflow                        | P0       | Designed               | Grade item/scale lookup to be confirmed.                                                                 |
 | Assignments                  | Confirm assignment visibility for expected roles.                          | Teacher can access grading entry; student can access assignment view.    | Assignment UI, role checks              | P0       | Designed               | Exact capability checks to be verified.                                                                  |
 | Submissions                  | Confirm deterministic submission exists.                                   | `student.qa` has submitted work for target assignment.                   | Teacher opens submissions               | P0       | Designed               | Submission API area and function name to be confirmed.                                                   |
-| Submissions                  | Reset or create deterministic submission where supported.                  | Setup leaves a known submission ready for grading.                       | E2E grading setup                       | P0       | Blocked by environment | Requires write-capable Web Services or documented manual seed fallback.                                  |
+| Submissions                  | Reset or create deterministic submission where supported.                  | Setup leaves a known submission ready for grading.                       | E2E grading setup                       | P0       | Local seed implemented | Web Service mutation remains future work; local Docker seed handles the controlled baseline.             |
 | Submissions                  | Read submission status after UI navigation.                                | Submission remains visible and not accidentally modified.                | UI/API reconciliation                   | P1       | Designed               | Function confirmation needed.                                                                            |
 | Grades/gradebook             | Reset target grade before grading scenario.                                | Student grade is blank or baseline before teacher action.                | Grading E2E setup                       | P0       | Blocked by environment | Mutation helper depends on configured Web Services.                                                      |
 | Grades/gradebook             | Validate grade saved after UI action.                                      | Backend grade for `student.qa` is `82 / 100`.                            | Teacher grading                         | P0       | Designed               | Grade API or gradebook area to be confirmed.                                                             |
@@ -90,7 +90,7 @@ Phase 3 API helpers should own:
 - Cleanup of temporary data created by tests.
 - Environment-blocked reporting when required Web Services are not available.
 
-If mutation APIs are not available at first, document the manual seed baseline and use read-only API reconciliation until Web Services are enabled.
+If Web Service mutation APIs are not available at first, document the local seed baseline and use read-only/API-preflight checks until Web Services are enabled.
 
 ## Phase 3 Implementation Notes
 

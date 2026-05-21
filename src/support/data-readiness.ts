@@ -56,6 +56,27 @@ export function resolveAssignmentSubmissionsUrl(env: TestEnv = loadEnv()): strin
   return url.toString();
 }
 
+export function resolveAssignmentGradingUrl(env: TestEnv = loadEnv()): string | undefined {
+  if (hasValue(env.assignmentGradingUrl)) {
+    return env.assignmentGradingUrl;
+  }
+
+  const assignmentUrl = resolveAssignmentUrl(env);
+
+  if (!assignmentUrl) {
+    return undefined;
+  }
+
+  const url = new URL(assignmentUrl, env.baseUrl);
+  url.searchParams.set('action', 'grader');
+
+  if (hasValue(env.studentId)) {
+    url.searchParams.set('userid', env.studentId);
+  }
+
+  return url.toString();
+}
+
 function courseIdFromUrl(env: TestEnv): string | undefined {
   if (!hasValue(env.courseUrl)) {
     return undefined;
@@ -166,10 +187,17 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
   const warnings = [...baseReadiness.warnings];
   const submissionsUrl = resolveAssignmentSubmissionsUrl(env);
   const gradebookUrl = resolveGradebookUrl(env);
+  const gradingUrl = resolveAssignmentGradingUrl(env);
 
   if (!submissionsUrl) {
     errors.push(
       'Set MOODLE_ASSIGNMENT_SUBMISSIONS_URL, MOODLE_ASSIGNMENT_ID, or MOODLE_ASSIGNMENT_URL before running Phase 6 grading.'
+    );
+  }
+
+  if (!gradingUrl) {
+    errors.push(
+      'Set MOODLE_ASSIGNMENT_GRADING_URL, MOODLE_ASSIGNMENT_ID, or MOODLE_ASSIGNMENT_URL before running Phase 6 grading.'
     );
   }
 
@@ -183,6 +211,14 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     errors.push('MOODLE_TARGET_GRADE must be numeric before running Phase 6 grading.');
   }
 
+  if (!hasValue(env.studentId)) {
+    errors.push('MOODLE_STUDENT_ID is required before running Phase 6 gradebook row validation.');
+  }
+
+  if (!hasValue(env.studentEmail)) {
+    errors.push('MOODLE_STUDENT_EMAIL is required before running Phase 6 gradebook row validation.');
+  }
+
   if (!hasValue(env.apiToken)) {
     warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
   }
@@ -194,7 +230,9 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     summary: {
       ...baseReadiness.summary,
       submissionsNavigationReady: Boolean(submissionsUrl),
+      assignmentGradingNavigationReady: Boolean(gradingUrl),
       gradebookNavigationReady: Boolean(gradebookUrl),
+      studentEmailConfigured: Boolean(env.studentEmail),
       targetGrade: env.targetGrade
     }
   };

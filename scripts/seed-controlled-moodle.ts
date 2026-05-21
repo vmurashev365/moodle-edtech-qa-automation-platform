@@ -32,6 +32,7 @@ interface SeedOutput {
     name: string;
     url: string;
     submissionsUrl: string;
+    gradingUrl: string;
     maxGrade: number;
   };
   submission: {
@@ -42,6 +43,11 @@ interface SeedOutput {
   gradebook: {
     url: string;
     targetGrade: number;
+    baseline: {
+      mode: string;
+      assignGrade: number;
+      expectedBeforeUiGrade: string;
+    };
   };
   envSnippet: Record<string, string>;
   notes: string[];
@@ -125,6 +131,7 @@ function buildSeedEnvArgs(): string[] {
   const teacherPassword = seedPassword(env.teacherPassword);
   const studentPassword = seedPassword(env.studentPassword);
   const studentDisplayName = env.studentDisplayName || 'Student QA';
+  const studentEmail = env.studentEmail || 'student.qa@example.test';
 
   return [
     '-e',
@@ -139,6 +146,8 @@ function buildSeedEnvArgs(): string[] {
     asSeedEnv('MOODLE_STUDENT_PASSWORD', studentPassword),
     '-e',
     asSeedEnv('MOODLE_STUDENT_DISPLAY_NAME', studentDisplayName),
+    '-e',
+    asSeedEnv('MOODLE_STUDENT_EMAIL', studentEmail),
     '-e',
     asSeedEnv('MOODLE_COURSE_NAME', env.courseName),
     '-e',
@@ -182,7 +191,9 @@ function printSummary(seedOutput: SeedOutput): void {
   logger.info(`Assignment CMID: ${seedOutput.assignment.cmid}`);
   logger.info(`Assignment URL: ${seedOutput.assignment.url}`);
   logger.info(`Submissions URL: ${seedOutput.assignment.submissionsUrl}`);
+  logger.info(`Assignment grading URL: ${seedOutput.assignment.gradingUrl}`);
   logger.info(`Gradebook URL: ${seedOutput.gradebook.url}`);
+  logger.info(`Seeded grade baseline: ${seedOutput.gradebook.baseline.expectedBeforeUiGrade}`);
   logger.info(`Target grade: ${seedOutput.gradebook.targetGrade}`);
   logger.info(`Generated Moodle metadata has been written to: ${artifactPath}`);
 

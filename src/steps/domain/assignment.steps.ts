@@ -14,7 +14,7 @@ Given('controlled Moodle test data exists', async function (this: MoodleWorld) {
   if (!readiness.ok) {
     throw new Error(
       `Controlled Moodle test data is not ready for Phase 5: ${readiness.errors.join(' ')} ` +
-        'Use the manual seed checklist in docs/TEST_DATA_STRATEGY.md, then set the required .env IDs or URLs.'
+        'Run npm run moodle:seed:ready, then confirm the required .env IDs or URLs are present.'
     );
   }
 });
@@ -25,7 +25,7 @@ Given('controlled Moodle grading test data exists', async function (this: Moodle
   if (!readiness.ok) {
     throw new Error(
       `Controlled Moodle grading data is not ready for Phase 6: ${readiness.errors.join(' ')} ` +
-        'Seed the controlled course, assignment, Student QA submission, submissions URL/ID, and gradebook URL/ID before removing @wip.'
+        'Run npm run moodle:seed:ready before the local grading workflow.'
     );
   }
 });
@@ -53,6 +53,12 @@ When('I open the submissions view', async function (this: MoodleWorld) {
 When('I open the controlled assignment submissions page', async function (this: MoodleWorld) {
   const assignmentPage = new AssignmentPage(this.requirePage());
   await assignmentPage.openSubmissions(this.env);
+  await assignmentPage.expectDeterministicSubmissionVisible(this.env);
+});
+
+When('I open the controlled assignment grading interface', async function (this: MoodleWorld) {
+  const assignmentPage = new AssignmentPage(this.requirePage());
+  await assignmentPage.openGradingInterface(this.env);
   await assignmentPage.expectDeterministicSubmissionVisible(this.env);
 });
 

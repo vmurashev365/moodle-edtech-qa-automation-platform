@@ -1,15 +1,13 @@
+import type { Locator } from '@playwright/test';
 import type { TestEnv } from '../../support/env';
-import {
-  resolveAssignmentSubmissionsUrl,
-  resolveAssignmentUrl,
-  studentSubmissionSearchTerms
-} from '../../support/data-readiness';
+import { resolveAssignmentGradingUrl, resolveAssignmentUrl } from '../../support/data-readiness';
 import { uiExpect } from '../../support/ui-expect';
-import { assignmentLegacySelectors } from '../../ui-map/assignment.selectors';
 import { BasePage } from '../base/BasePage';
 
 const deterministicSubmissionText =
   'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';
+// Mission 5 Recorder evidence shows this Moodle semantic container owns submission status facts.
+const moodleSubmissionStatusPanelSelector = '.submissionstatustable';
 
 export class AssignmentPage extends BasePage {
   async openControlledAssignment(env: TestEnv): Promise<void> {
@@ -25,7 +23,7 @@ export class AssignmentPage extends BasePage {
   }
 
   async openAssignment(assignmentName: string): Promise<void> {
-    const assignmentLink = this.page.getByRole('link', { name: this.textMatcher(assignmentName) }).first();
+    const assignmentLink = this.assignmentLink(assignmentName);
 
     await uiExpect(
       assignmentLink,
@@ -35,41 +33,35 @@ export class AssignmentPage extends BasePage {
     await this.waitForReady();
   }
 
+  // Compatibility with existing Cucumber wording: the controlled one-submission assignment opens
+  // Moodle's single-user grading interface when the teacher chooses the verified Grade action.
   async openSubmissions(env: TestEnv): Promise<void> {
-    const submissionsUrl = resolveAssignmentSubmissionsUrl(env);
+    await this.openGradingInterface(env);
+  }
 
-    if (submissionsUrl) {
-      await this.gotoUrl(submissionsUrl);
-      return;
+  async openGradingInterface(env: TestEnv): Promise<void> {
+    const gradingUrl = resolveAssignmentGradingUrl(env);
+
+    if (gradingUrl) {
+      await this.gotoUrl(gradingUrl);
+    } else {
+      const gradeAction = this.gradeAction();
+
+      await uiExpect(gradeAction, 'Expected the controlled assignment Grade action to be visible.').toBeVisible();
+      await gradeAction.click();
+      await this.waitForReady();
     }
 
-    const accessibleAction = this.page
-      .getByRole('link', { name: /view all submissions|submissions|grade/i })
-      .or(this.page.getByRole('button', { name: /view all submissions|submissions|grade/i }));
-    const legacyAction = this.page
-      .locator(assignmentLegacySelectors.assignmentPage.submissionsAction)
-      .filter({ hasText: /view all submissions|submissions|grade/i });
-    const submissionsAction = accessibleAction.or(legacyAction).first();
+    await this.expectUrlToContain('action=grader');
 
-    await uiExpect(submissionsAction, 'Expected an assignment submissions action to be visible.').toBeVisible();
-    await submissionsAction.click();
-    await this.waitForReady();
+    if (env.studentId) {
+      await this.expectUrlToContain(`userid=${env.studentId}`);
+    }
   }
 
   async expectDeterministicSubmissionVisible(env: TestEnv): Promise<void> {
-    const searchTerms = [...studentSubmissionSearchTerms(env), deterministicSubmissionText];
-    const searchPattern = new RegExp(searchTerms.map((term) => this.escapeForRegExp(term)).join('|'), 'i');
-    const studentRow = this.page.getByRole('row').filter({ hasText: searchPattern });
-    const deterministicSubmission = this.page.getByText(deterministicSubmissionText, { exact: false });
-    const legacySubmissionsTable = this.page
-      .locator(assignmentLegacySelectors.assignmentPage.submissionsTable)
-      .filter({ hasText: searchPattern });
-    const visibleSubmissionContract = studentRow.or(deterministicSubmission).or(legacySubmissionsTable).first();
-
-    await uiExpect(
-      visibleSubmissionContract,
-      `Expected deterministic student submission to be visible using one of: ${searchTerms.join(', ')}.`
-    ).toBeVisible();
+    await this.expectDeterministicStudentVisible(env);
+    await this.expectSubmissionReadyForGrading();
   }
 
   async gradeSubmission(username: string, grade: string): Promise<void> {
@@ -79,22 +71,153 @@ export class AssignmentPage extends BasePage {
   }
 
   async gradeDeterministicSubmissionWithTargetGrade(env: TestEnv): Promise<void> {
-    void env;
-    this.pendingSelectors(
-      'Phase 6 teacher grading workflow. Controlled Moodle seed data and grading selectors must be verified before removing @wip.'
-    );
+    await this.expectDeterministicStudentVisible(env);
+    await this.expectSubmissionReadyForGrading();
+    await this.expectCurrentGradeIsNotTarget(env.targetGrade);
+
+    const gradeInput = this.gradeInput();
+    const saveButton = this.saveChangesButton();
+
+    await uiExpect(gradeInput, 'Expected Moodle grade input to be visible.').toBeVisible();
+    await gradeInput.fill(String(env.targetGrade));
+    await saveButton.scrollIntoViewIfNeeded();
+    await uiExpect(saveButton, 'Expected Moodle Save changes button to be visible.').toBeVisible();
+    await saveButton.click();
+    await this.waitForReady();
+
+    await this.expectNoVisibleValidationErrors();
+    await this.expectSavedCurrentGrade(env.targetGrade);
   }
 
   private async expectAssignmentContext(assignmentName: string): Promise<void> {
-    const heading = this.page.getByRole('heading', { name: this.textMatcher(assignmentName) });
-    const title = this.page
-      .locator(assignmentLegacySelectors.assignmentPage.assignmentTitle)
-      .filter({ hasText: this.textMatcher(assignmentName) });
-    const mainRegion = this.page
-      .locator(assignmentLegacySelectors.assignmentPage.mainRegion)
-      .filter({ hasText: this.textMatcher(assignmentName) });
-    const assignmentContext = heading.or(title).or(mainRegion).first();
+    const heading = this.page.getByRole('heading', { name: this.textMatcher(assignmentName) }).first();
 
-    await uiExpect(assignmentContext, `Expected controlled assignment page to show "${assignmentName}".`).toBeVisible();
+    await uiExpect(heading, `Expected controlled assignment page heading to show "${assignmentName}".`).toBeVisible();
+    await this.expectGradingSummaryVisible();
+  }
+
+  private async expectGradingSummaryVisible(): Promise<void> {
+    const mainRegion = this.page.getByRole('main').first();
+    const summaryRows = this.page.getByRole('rowgroup');
+
+    await uiExpect(mainRegion, 'Expected controlled assignment page to show the grading summary.').toContainText(
+      'Grading summary'
+    );
+    await uiExpect(summaryRows, 'Expected grading summary to include participant count.').toContainText('Participants');
+    await uiExpect(summaryRows, 'Expected grading summary to include submitted count.').toContainText('Submitted');
+    await uiExpect(summaryRows, 'Expected grading summary to include needs grading count.').toContainText(
+      'Needs grading'
+    );
+  }
+
+  private gradeAction(): Locator {
+    return this.page.getByRole('link', { name: /^Grade$/i }).first();
+  }
+
+  private async expectDeterministicStudentVisible(env: TestEnv): Promise<void> {
+    if (!env.studentDisplayName) {
+      throw new Error('MOODLE_STUDENT_DISPLAY_NAME is required to assert the deterministic student identity.');
+    }
+
+    if (!env.studentEmail) {
+      throw new Error('MOODLE_STUDENT_EMAIL is required to assert the deterministic student identity.');
+    }
+
+    const studentPanel = this.studentInfoPanel(env.studentDisplayName);
+
+    await uiExpect(
+      studentPanel,
+      `Expected single-user grading interface to show student "${env.studentDisplayName}".`
+    ).toBeVisible();
+    await uiExpect(studentPanel, `Expected single-user grading interface to show "${env.studentEmail}".`).toContainText(
+      env.studentEmail
+    );
+  }
+
+  private async expectSubmissionReadyForGrading(): Promise<void> {
+    const statusPanel = this.submissionStatusPanel();
+
+    await uiExpect(statusPanel, 'Expected Moodle submission status panel to be visible.').toBeVisible();
+    await uiExpect(statusPanel, 'Expected submitted-for-grading status.').toContainText(/Submitted for grading/i);
+    await uiExpect(statusPanel, 'Expected not-graded status.').toContainText(/Not graded/i);
+    await uiExpect(
+      statusPanel,
+      'Expected deterministic submission text in the Moodle submission status panel.'
+    ).toContainText(deterministicSubmissionText);
+  }
+
+  private async expectCurrentGradeIsNotTarget(targetGrade: number): Promise<void> {
+    const currentValue = await this.gradeInput().inputValue();
+    const currentGrade = this.parseGrade(currentValue);
+
+    if (currentGrade === targetGrade) {
+      throw new Error(
+        `Controlled grading baseline is already ${targetGrade}. Run npm run moodle:seed:ready so the UI scenario proves a real grade write.`
+      );
+    }
+  }
+
+  private async expectSavedCurrentGrade(targetGrade: number): Promise<void> {
+    await uiExpect(this.currentGradeInGradebook(), 'Expected Moodle current grade field to be visible.').toBeVisible();
+    await uiExpect(
+      this.currentGradeInGradebook(),
+      'Expected current grade in gradebook to match saved UI grade.'
+    ).toContainText(this.formattedGrade(targetGrade));
+  }
+
+  private async expectNoVisibleValidationErrors(): Promise<void> {
+    await uiExpect(
+      this.visibleValidationErrors(),
+      'Expected Moodle grading form to have no visible validation errors.'
+    ).toHaveCount(0);
+  }
+
+  private studentInfoPanel(studentDisplayName: string): Locator {
+    return this.page.locator('[data-region="user-info"]').filter({ hasText: studentDisplayName }).first();
+  }
+
+  private submissionStatusPanel(): Locator {
+    return this.page.locator(moodleSubmissionStatusPanelSelector).first();
+  }
+
+  private gradeInput(): Locator {
+    return this.page.getByRole('textbox', { name: /Grade out of/i }).first();
+  }
+
+  private saveChangesButton(): Locator {
+    return this.page.getByRole('button', { name: /^Save changes$/i }).first();
+  }
+
+  private currentGradeInGradebook(): Locator {
+    return this.page.locator('#fitem_id_currentgrade').first();
+  }
+
+  private visibleValidationErrors(): Locator {
+    return this.page
+      .locator('.invalid-feedback:visible, .form-control-feedback:visible, .alert-danger:visible')
+      .filter({ hasText: /\S/ });
+  }
+
+  private formattedGrade(grade: number): string {
+    return Number(grade).toFixed(2);
+  }
+
+  private parseGrade(value: string): number | undefined {
+    const match = value.replace(',', '.').match(/-?\d+(?:\.\d+)?/);
+
+    if (!match) {
+      return undefined;
+    }
+
+    const parsed = Number.parseFloat(match[0]);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+
+  private assignmentLink(assignmentName: string): Locator {
+    return this.page.getByRole('link', { name: this.assignmentLinkNameMatcher(assignmentName) }).first();
+  }
+
+  private assignmentLinkNameMatcher(assignmentName: string): RegExp {
+    return new RegExp(`${this.escapeForRegExp(assignmentName)}(?:\\s+Assignment)?`, 'i');
   }
 }

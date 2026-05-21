@@ -22,9 +22,11 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Controlled Moodle setup: Docker Compose available; `npm run moodle:seed` creates deterministic local users/course/assignment/enrolments/submission; `npm run moodle:seed:env` applies generated metadata to untracked local `.env`; generated local artifact is ignored and not public proof by itself
 - Phase 4 local controlled Moodle smoke: implemented and passed locally; public report/screenshot link TBD
 - Phase 5 local teacher submission review: implemented for controlled seeded Moodle; run `npm run moodle:seed:ready` or run seed plus `.env` sync before the workflow; public report/screenshot link TBD
+- Phase 5 Mission 1-5 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission1-4` and `tools/recordings/localhost_mission5`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
+- Phase 6 Mission 6 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission6`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
+- Phase 6 local teacher grading and gradebook verification: implemented with `npm run test:local:grading`; requires `npm run moodle:seed:ready` first so the Student QA grade starts from the ungraded baseline
 - Failed Cucumber browser scenarios: Playwright trace zip is saved under ignored `traces/` when `TRACE_MODE=retain-on-failure` or `on`
 - Mount Orange recorder findings: planned only for recon, not CI
-- Full teacher assignment grading E2E: Phase 6 WIP/blocked until grading and gradebook selectors are verified
 - First API coverage beyond safe preflight: TBD
 
 ## Phase 3 automation skeleton
@@ -46,6 +48,8 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 - Controlled data readiness check: Ready with `npm run check:data`
 - Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data and generated `.env` URLs
+- Login, dashboard/course, course/assignment, assignment-summary, Grade action, Student QA identity, and submission-status locator contracts: verified from local Mission 1-5 Recorder/Codegen evidence
+- Mission 6 extends the verified controls through grade input, save, and gradebook row checks
 - Seed evidence and public Allure report: TBD
 - Grading and gradebook reconciliation: Phase 6
 
@@ -53,9 +57,10 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 - Grading readiness check: Ready with `npm run check:grading-data`
 - Local grading readiness alias: Ready with `npm run check:local:grading-readiness`
-- Local grading command: `npm run test:local:grading` is guarded against zero-scenario false green results
-- Current status: Seed data can be created locally; grading scenario remains `@wip` pending selector verification and is not proven evidence
-- Next step: Recorder/Codegen selector discovery against the seeded local Moodle instance
+- Local grading command: `npm run test:local:grading` is guarded against zero-scenario false green results and selects one executable Phase 6 scenario when seeded data is ready
+- Current status: Implemented locally; proof requires `npm run moodle:seed:ready` followed by `npm run test:local:grading`
+- Verified UI behavior: teacher grades Student QA with `MOODLE_TARGET_GRADE`; gradebook row for `MOODLE_STUDENT_ID` shows Student QA, `student.qa@example.test`, assignment context, Course total context, and the formatted target grade
+- API status: API coverage remains preflight/helper-level; missing Moodle Web Service token warnings are non-blocking for this UI proof
 - Public Allure report/demo evidence: TBD
 
 ## Phase 2 design artifacts
@@ -65,7 +70,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - [BDD Architecture](BDD_ARCHITECTURE.md): Ready
 - [API Coverage Matrix](API_COVERAGE_MATRIX.md): Ready
 
-These artifacts define planned coverage only. Allure public report, demo video, recorder findings, full teacher workflow E2E, and implemented Moodle API coverage beyond safe preflight remain TBD until later implementation produces evidence.
+These artifacts distinguish implemented local workflows from planned coverage. Allure public report, demo video, and implemented Moodle API coverage beyond safe preflight remain TBD until later implementation produces evidence.
 
 ## Related portfolio implementations
 

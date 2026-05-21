@@ -33,20 +33,33 @@ Phase 5 adds the first teacher-facing local workflow path:
 - open the submissions view
 - assert the deterministic student submission is visible
 
-Data setup now uses the Phase 6A.1 local seed command below. Grading and gradebook reconciliation remain Phase 6 scope until selector discovery and grade save behavior are verified.
+Data setup now uses the local seed command below. Phase 6 adds the first real grading and gradebook reconciliation path for the same controlled assignment.
 
 ## Phase 6A.1 controlled seed status
 
-Phase 6A.1 adds a deterministic local Moodle seed command:
+The deterministic local Moodle seed command:
 
 - runs inside the local Docker Moodle container
 - uses Moodle internal APIs for users, course creation, manual enrolment, assignment creation/update, and online text submission setup
 - creates or updates `teacher.qa`, `student.qa`, `QA Automation Demo 101`, `Essay: Test Automation Strategy`, enrolments, and the deterministic student submission
+- resets the Student QA assignment grade to Moodle's ungraded baseline through the assign grading API before the UI grading scenario writes the target grade
 - writes generated course, assignment, student, submission, submissions, and gradebook IDs/URLs to a local seed artifact
 - applies generated IDs and URLs to the untracked local `.env` with `npm run moodle:seed:env`
 - writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`
 
-`npm run moodle:seed:env` creates `.env` from `.env.example` if needed and creates a timestamped `.env.backup.*` before editing an existing `.env`. Generated URLs use Moodle's configured local `wwwroot` so browser sessions stay on the host Moodle expects. The seed artifact is local setup evidence only. It is not public proof by itself. Recorder/Codegen selector discovery and grading selector implementation come after seed readiness passes.
+`npm run moodle:seed:env` creates `.env` from `.env.example` if needed and creates a timestamped `.env.backup.*` before editing an existing `.env`. Generated URLs use Moodle's configured local `wwwroot` so browser sessions stay on the host Moodle expects. The seed artifact is local setup evidence only. It is not public proof by itself.
+
+## Phase 6 grading and gradebook status
+
+Phase 6 implements one deterministic local UI scenario:
+
+- log in as `teacher.qa`
+- open the generated single-user grading URL for Student QA
+- enter `MOODLE_TARGET_GRADE`, default `82`
+- save through Moodle's grading UI
+- open the gradebook and verify the `#fixed_user_<MOODLE_STUDENT_ID>` row contains `Student QA`, `student.qa@example.test`, and `82.00`
+
+Mission 6 Recorder/Codegen evidence was captured locally under ignored `tools/recordings/localhost_mission6`. The implemented scenario is evidence only when `npm run moodle:seed:ready` followed by `npm run test:local:grading` passes. API coverage remains preflight/helper-level until Moodle Web Services are configured.
 
 ## Current Status
 
@@ -55,13 +68,14 @@ Implemented:
 - static GitHub Actions validation
 - controlled Moodle login-page smoke
 - Phase 5 submission-review foundation with controlled seed readiness checks
-- Phase 6A.1 local controlled Moodle seed and safe `.env` sync commands
+- local controlled Moodle seed and safe `.env` sync commands
+- Phase 6 local teacher grading plus gradebook row verification
 - Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `TRACE_MODE=retain-on-failure`
 
 Blocked / WIP:
 
-- Phase 6 grading and gradebook flow until submissions navigation, gradebook navigation, and grading selectors are verified
-- next immediate step: Recorder/Codegen selector discovery against the seeded local Moodle instance
+- broader API-backed grade reset/reconciliation through Moodle Web Services
+- security, media, and role-negative workflows beyond existing skeleton coverage
 
 Planned:
 
@@ -150,6 +164,7 @@ npm run check:data
 npm run check:grading-data
 npm run check:local:grading-readiness
 npm run test:local:teacher-workflow
+npm run test:local:grading
 npm run moodle:stop
 ```
 
@@ -160,10 +175,11 @@ npm run moodle:start
 npm run moodle:wait
 npm run moodle:seed:ready
 npm run test:local:teacher-workflow
+npm run test:local:grading
 npm run moodle:stop
 ```
 
-`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is guarded against selecting zero scenarios, so while the Phase 6 scenario remains `@wip` it fails intentionally instead of producing false evidence.
+`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only and guarded against selecting zero scenarios.
 
 Validate the skeleton:
 
@@ -233,8 +249,8 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: current UI and E2E workflows beyond the Phase 5 submission-review path are skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. The Docker image defaults remain configurable; pinning the Moodle image is deferred until the seeded local workflow is proven against a specific version.
+Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission review, and Phase 6 local grading/gradebook scenario remain skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. The Docker image defaults remain configurable; pinning the Moodle image is deferred until the seeded local workflow is proven against a specific version.
 
 ---
 
-Last updated: Phase 7 reliability and evidence-honesty hardening
+Last updated: Phase 8 local grading and gradebook verification

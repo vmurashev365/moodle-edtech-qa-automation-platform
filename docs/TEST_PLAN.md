@@ -13,7 +13,7 @@ Test objectives
 Scope
 
 - MVP target covers authentication, teacher dashboard, course access, assignment page, student submission lifecycle, teacher grading, and gradebook validation.
-- Current implemented scope covers static framework validation, safe API preflight, Phase 4 local login-page smoke, a Phase 5 manual-seed teacher submission-review workflow, and a Phase 6 grading readiness gate. Phase 5/6 live workflows remain blocked until controlled seed data, URLs/IDs, and grading/gradebook selectors are configured.
+- Current implemented scope covers static framework validation, safe API preflight, Phase 4 local login-page smoke, a Phase 5 seeded teacher submission-review workflow, and one Phase 6 local teacher grading plus gradebook row verification workflow.
 
 Out of scope (MVP)
 
@@ -25,7 +25,7 @@ Assumptions
 
 - Controlled Moodle environment is available for local runs through Docker or VPS.
 - Main GitHub Actions CI remains static/safe and does not require live Moodle.
-- Seed data reset through API helpers is planned, not currently available.
+- Local seed data reset through Moodle internal APIs is available for the controlled grading scenario. Broader Web Service-backed API validation remains planned.
 
 Test items
 
@@ -71,8 +71,8 @@ Entry criteria
 
 - Controlled Moodle instance deployed and reachable
 - Seed accounts (teacher and student) provisioned; built-in admin remains image-provided and manager role data is planned for later expansion
-- Manual seed data configured for Phase 5 local teacher workflow
-- API-backed test-data reset helpers are a future entry criterion for broader regression
+- Local seed data configured for Phase 5/6 local teacher workflows
+- Web Service-backed test-data reset helpers are a future entry criterion for broader regression
 
 Exit criteria
 These are target MVP completion criteria, not current evidence status.
@@ -83,7 +83,7 @@ These are target MVP completion criteria, not current evidence status.
 
 Suspension/resumption criteria
 
-- Suspend local Moodle workflow runs if the controlled host is unavailable or manual seed data is missing; resume after remediation and seed verification.
+- Suspend local Moodle workflow runs if the controlled host is unavailable or local seed data is missing; resume after remediation and seed verification.
 
 Test deliverables
 
@@ -108,7 +108,7 @@ Test data summary
 Risks and mitigations
 
 - Public demo instability — Mount Orange remains recon-only; repeatable tests use controlled Moodle.
-- Test-data pollution — manual seed checklist now; API reset helpers and scoped datasets are planned.
+- Test-data pollution — local seed/reset now; broader Web Service helpers and scoped datasets are planned.
 
 Roles and responsibilities
 
@@ -123,8 +123,8 @@ Schedule / phased delivery
 - Phase 2: test design artifacts: traceability, test data strategy, BDD architecture, API coverage matrix
 - Phase 3: automation skeleton and controlled Moodle setup: package/config, Cucumber/Playwright structure, feature files, page objects, API helper skeleton, CI skeleton
 - Phase 4: local controlled Moodle login-page smoke
-- Phase 5: manual-seed teacher submission-review workflow; blocked until controlled seed data and URLs/IDs are configured
-- Phase 6: grading/gradebook readiness gate and WIP target scenario; full proof remains blocked until seed/selectors are verified
+- Phase 5: seeded teacher submission-review workflow
+- Phase 6: local grading/gradebook scenario using Mission 6 selector evidence
 - Later: API-backed seeding/reset, security/media checks, and published evidence
 
 Approval / completion criteria

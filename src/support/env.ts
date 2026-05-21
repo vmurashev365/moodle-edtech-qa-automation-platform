@@ -14,6 +14,7 @@ export interface TestEnv {
   teacherPassword: string;
   studentUsername: string;
   studentPassword: string;
+  studentEmail: string;
   managerUsername: string;
   managerPassword: string;
   apiToken: string;
@@ -28,6 +29,7 @@ export interface TestEnv {
   courseUrl: string;
   assignmentUrl: string;
   assignmentSubmissionsUrl: string;
+  assignmentGradingUrl: string;
   gradebookUrl: string;
   studentDisplayName: string;
   readyTimeoutMs: number;
@@ -103,6 +105,7 @@ export function loadEnv(): TestEnv {
     teacherPassword: readSeededUserPassword('MOODLE_TEACHER_PASSWORD'),
     studentUsername: readEnv('MOODLE_STUDENT_USERNAME', 'student.qa'),
     studentPassword: readSeededUserPassword('MOODLE_STUDENT_PASSWORD'),
+    studentEmail: readEnv('MOODLE_STUDENT_EMAIL', 'student.qa@example.test'),
     managerUsername: readEnv('MOODLE_MANAGER_USERNAME', 'manager.qa'),
     managerPassword: readEnv('MOODLE_MANAGER_PASSWORD', 'changeme'),
     apiToken: readEnv('MOODLE_API_TOKEN', ''),
@@ -117,6 +120,7 @@ export function loadEnv(): TestEnv {
     courseUrl: readEnv('MOODLE_COURSE_URL', ''),
     assignmentUrl: readEnv('MOODLE_ASSIGNMENT_URL', ''),
     assignmentSubmissionsUrl: readEnv('MOODLE_ASSIGNMENT_SUBMISSIONS_URL', ''),
+    assignmentGradingUrl: readEnv('MOODLE_ASSIGNMENT_GRADING_URL', ''),
     gradebookUrl: readEnv('MOODLE_GRADEBOOK_URL', ''),
     studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
     readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
@@ -180,6 +184,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       baseUrl: env.baseUrl,
       teacherUsername: env.teacherUsername,
       studentUsername: env.studentUsername,
+      studentEmail: env.studentEmail,
       managerUsername: env.managerUsername,
       courseName: env.courseName,
       assignmentName: env.assignmentName,
@@ -188,6 +193,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       courseNavigationConfigured: Boolean(env.courseId || env.courseUrl),
       assignmentNavigationConfigured: Boolean(env.assignmentId || env.assignmentUrl),
       submissionsNavigationConfigured: Boolean(env.assignmentSubmissionsUrl || env.assignmentId || env.assignmentUrl),
+      gradingNavigationConfigured: Boolean(env.assignmentGradingUrl || env.assignmentId || env.assignmentUrl),
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       readyTimeoutMs: env.readyTimeoutMs,
       apiTokenConfigured: Boolean(env.apiToken),

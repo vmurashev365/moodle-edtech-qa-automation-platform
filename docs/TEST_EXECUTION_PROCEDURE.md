@@ -2,9 +2,9 @@
 
 ## Purpose
 
-This document explains how to run the automation skeleton, the Phase 4 local Moodle smoke, the Phase 5 local teacher workflow, the Phase 6 grading readiness gate, and CI-safe checks.
+This document explains how to run the automation skeleton, the Phase 4 local Moodle smoke, the Phase 5 local teacher workflow, the Phase 6 local grading/gradebook workflow, and CI-safe checks.
 
-The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Phase 5 adds a teacher-facing submission review path that requires controlled seed data. Phase 6 grading/gradebook steps remain `@wip` until grading selectors, grade save behavior, and gradebook selectors are verified.
+The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Phase 5 adds a teacher-facing submission review path that requires controlled seed data. Phase 6 adds one local UI proof for teacher grading and gradebook row verification after deterministic seeding.
 
 ## Local Setup
 
@@ -34,6 +34,7 @@ Key variables:
 - `MOODLE_TEACHER_PASSWORD`
 - `MOODLE_STUDENT_USERNAME`
 - `MOODLE_STUDENT_PASSWORD`
+- `MOODLE_STUDENT_EMAIL`
 - `MOODLE_MANAGER_USERNAME`
 - `MOODLE_MANAGER_PASSWORD`
 - `MOODLE_API_TOKEN`
@@ -44,6 +45,7 @@ Key variables:
 - `MOODLE_COURSE_ID` or `MOODLE_COURSE_URL`
 - `MOODLE_ASSIGNMENT_ID` or `MOODLE_ASSIGNMENT_URL`
 - `MOODLE_ASSIGNMENT_SUBMISSIONS_URL`
+- `MOODLE_ASSIGNMENT_GRADING_URL`
 - `MOODLE_STUDENT_ID`
 - `MOODLE_SUBMISSION_ID`
 - `MOODLE_STUDENT_DISPLAY_NAME`
@@ -63,11 +65,11 @@ npm run moodle:seed
 npm run moodle:seed:env
 ```
 
-The seed runs PHP inside the local Docker Moodle container and uses Moodle internal APIs for users, course creation/update, manual enrolments, assignment creation/update, and online text submission setup. It is idempotent and does not silently edit `.env`. It writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`.
+The seed runs PHP inside the local Docker Moodle container and uses Moodle internal APIs for users, course creation/update, manual enrolments, assignment creation/update, online text submission setup, and assignment grade reset. It is idempotent and does not silently edit `.env`. It writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`.
 
-`npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates deterministic Moodle metadata from the generated `envSnippet`, including `MOODLE_STUDENT_ID` and `MOODLE_SUBMISSION_ID`, and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
+`npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates deterministic Moodle metadata from the generated `envSnippet`, including `MOODLE_STUDENT_ID`, `MOODLE_STUDENT_EMAIL`, `MOODLE_SUBMISSION_ID`, and `MOODLE_ASSIGNMENT_GRADING_URL`, and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
 
-The generated artifact is local setup metadata, not public proof by itself. Recorder/Codegen selector discovery comes after seed readiness passes.
+The generated artifact is local setup metadata, not public proof by itself. Mission 6 Recorder/Codegen evidence is local under ignored `tools/recordings/localhost_mission6`.
 
 Convenience readiness command:
 
@@ -94,17 +96,18 @@ Then run `npm run moodle:seed:env` so the generated course, assignment, submissi
 
 ## Phase 6 Grading Seed Checklist
 
-Before removing `@wip` from the grading scenario or running it as evidence, confirm:
+Before running the grading scenario as evidence, confirm:
 
 - Phase 5 controlled seed checklist is complete
 - deterministic `Student QA` submission appears in the assignment submissions page
 - `MOODLE_ASSIGNMENT_SUBMISSIONS_URL` or `MOODLE_ASSIGNMENT_ID`/`MOODLE_ASSIGNMENT_URL` is configured
+- `MOODLE_ASSIGNMENT_GRADING_URL` or enough assignment/student metadata to derive it is configured
 - `MOODLE_GRADEBOOK_URL`, `MOODLE_COURSE_ID`, or `MOODLE_COURSE_URL` is configured
 - assignment grade scale accepts `MOODLE_TARGET_GRADE`, default `82`
-- teacher can save the grade manually in the controlled instance
-- gradebook displays the saved grade for `MOODLE_STUDENT_DISPLAY_NAME`
+- seed reset leaves Student QA grading baseline as not graded
+- the UI scenario saves the target grade and gradebook displays it for `MOODLE_STUDENT_DISPLAY_NAME`
 
-The seed does not pre-grade the submission. Do not treat the generated local artifact as gradebook evidence.
+The seed does not pre-grade the submission with the target grade. It resets the controlled grade to Moodle's ungraded baseline through the assign grading API so the UI scenario must perform the write. Do not treat the generated local artifact as gradebook evidence.
 
 ## Docker Start / Stop / Reset
 
@@ -150,7 +153,7 @@ Inspect logs:
 npm run moodle:logs
 ```
 
-The Docker image may still require Moodle admin setup or Web Services enablement for later API work. The Phase 6A.1 seed creates the controlled users, course, assignment, enrolments, and deterministic online-text submission needed for local selector discovery.
+The Docker image may still require Moodle admin setup or Web Services enablement for later API work. The seed creates the controlled users, course, assignment, enrolments, deterministic online-text submission, and ungraded baseline needed for local grading validation.
 
 The default Docker images are configurable through `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`. They are intended for local controlled validation; pin or mirror approved images before relying on the stack long term.
 
@@ -190,7 +193,7 @@ Readiness-only alias:
 npm run check:local:grading-readiness
 ```
 
-This is the honest Phase 6 readiness command while the grading scenario remains `@wip`.
+This is the Phase 6 data-contract readiness command. It does not enter grades or prove gradebook behavior.
 
 ## Cucumber Suite Commands
 
@@ -229,13 +232,13 @@ npm run test:media
 npm run test:all
 ```
 
-The commands above exclude `@wip`. Until real Moodle selectors and API helpers are implemented, most UI suites may select no executable scenarios.
+The commands above exclude `@wip`. Suites that still target planned security, media, or broader UI coverage may select no executable scenarios until their Moodle selectors and API helpers are implemented.
 
 `test:local:smoke` requires the local controlled Moodle instance to be running and reachable. It does not require teacher/student/course/assignment provisioning.
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
 
-`test:local:grading` is local-only and guarded against false green results. It runs the grading data check, then fails intentionally if Cucumber selects zero executable Phase 6 scenarios. Until the Phase 6 `@wip` tag is removed after real Recorder/Codegen selector evidence and a local pass, this command is not proof of grading or gradebook behavior.
+`test:local:grading` is local-only and guarded against false green results. It runs the grading data check, then fails intentionally if Cucumber selects zero executable Phase 6 scenarios. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading plus gradebook row verification path.
 
 ## Failure Evidence
 

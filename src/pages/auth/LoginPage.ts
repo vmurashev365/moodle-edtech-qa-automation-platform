@@ -77,11 +77,11 @@ export class LoginPage extends BasePage {
   }
 
   private usernameField(): Locator {
-    return this.page.getByLabel(/username/i).first();
+    return this.page.getByRole('textbox', { name: /username/i }).first();
   }
 
   private passwordField(): Locator {
-    return this.page.getByLabel(/password/i).first();
+    return this.page.getByRole('textbox', { name: /password/i }).first();
   }
 
   private submitAction(): Locator {

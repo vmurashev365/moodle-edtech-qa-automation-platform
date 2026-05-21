@@ -23,9 +23,9 @@ To demonstrate a repeatable, risk-focused QA automation approach for EdTech plat
 ## Workflows covered or planned
 
 - Phase 4 local smoke: controlled Moodle login page reachability.
-- Phase 5 local workflow: teacher submission review against manually seeded controlled data.
-- Phase 6 target workflow: teacher grading and gradebook validation; currently blocked until controlled grading seed data and selectors are verified.
-- Planned next coverage: role-based access, selected media/audio resource checks, and API-backed test data setup/backend validation.
+- Phase 5 local workflow: teacher submission review against seeded controlled data.
+- Phase 6 local workflow: teacher grading and gradebook row validation against seeded controlled data.
+- Planned next coverage: role-based access, selected media/audio resource checks, and Web Service-backed backend validation.
 
 ## User roles covered
 
@@ -44,13 +44,13 @@ Automation provides repeatable regression coverage and fast feedback for busines
 ## How reports and evidence are produced
 
 - Static CI evidence is produced through GitHub Actions artifacts.
-- Local controlled Moodle smoke and Phase 5 teacher workflow results are local evidence until published.
+- Local controlled Moodle smoke, Phase 5 teacher workflow, and Phase 6 grading workflow results are local evidence until published.
 - Public Allure report and demo video remain TBD.
 - [EVIDENCE_INDEX.md](EVIDENCE_INDEX.md) is the source of truth for available artifacts and placeholders.
 
 ## Controlled environment approach
 
-Public Moodle demos are useful for discovery and exploratory recon only. Stable automated tests are intended to run against a controlled Moodle instance (local Docker or VPS) with deterministic seed data. API-backed reset helpers are planned after Moodle Web Services are verified.
+Public Moodle demos are useful for discovery and exploratory recon only. Stable automated tests are intended to run against a controlled Moodle instance (local Docker or VPS) with deterministic seed data. The local seed resets the controlled grading baseline through Moodle internal APIs; broader Web Service-backed helpers are planned after Moodle Web Services are verified.
 
 ## Reusable BDD Lego Steps as team multiplier
 
