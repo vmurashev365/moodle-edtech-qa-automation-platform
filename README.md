@@ -70,7 +70,8 @@ Implemented:
 - Phase 5 submission-review foundation with controlled seed readiness checks
 - local controlled Moodle seed and safe `.env` sync commands
 - Phase 6 local teacher grading plus gradebook row verification
-- Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `TRACE_MODE=retain-on-failure`
+- demo and fast execution profiles for local review and CI-safe runs
+- Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `MOODLE_TRACE_MODE=retain-on-failure`
 
 Blocked / WIP:
 
@@ -181,6 +182,51 @@ npm run moodle:stop
 
 `check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only and guarded against selecting zero scenarios.
 
+## Demo and fast execution profiles
+
+This repository uses two execution profiles:
+
+- `demo`: headed browser, readable scenario/step terminal output, small review delays, and optional screencast/video with click feedback.
+- `fast`: headless, no artificial delays, CI/CD-friendly, and safe for GitHub Actions-style validation.
+
+The profile is called `demo`, not production, because this framework targets a local controlled Moodle demo instance rather than a protected production or WAF-backed application.
+
+Local demo review commands:
+
+```bash
+npm run moodle:start
+npm run moodle:wait
+npm run moodle:seed:ready
+npm run test:demo:smoke
+npm run test:demo:teacher-workflow
+npm run test:demo:grading
+npm run test:demo:screencast:grading
+```
+
+Fast checks:
+
+```bash
+npm run type-check
+npm run lint
+npm run format:check
+npm run verify:env
+npm run test:fast:api
+```
+
+Demo videos are written under ignored `videos/`, traces under ignored `traces/`, screenshots under ignored `screenshots/`, and local reports under ignored `reports/`.
+Teacher-workflow and grading demo/fast scripts run the seed readiness path before the scenario so they stay repeatable after a previous grading run.
+The demo screencast grading command records Playwright video with click target highlighting, regenerates the Allure HTML evidence package, and opens the local Allure viewer automatically after the Cucumber run. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer.
+
+Generate an Allure HTML evidence package while preserving the test exit code:
+
+```bash
+npm run test:demo:grading:report
+npm run test:demo:screencast:grading
+npm run test:fast:api:report
+```
+
+The generated report is written to ignored `reports/allure-report/`; raw Allure results live under ignored `reports/allure-results/`.
+
 Validate the skeleton:
 
 ```bash
@@ -201,7 +247,9 @@ npm run test:wip
 
 GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 
-Failed Cucumber browser scenarios save Playwright traces under ignored `traces/` by default (`TRACE_MODE=retain-on-failure`) and attach the trace zip to the Cucumber/Allure result where reporter plumbing supports attachments. Use `TRACE_MODE=off` to disable traces or `TRACE_MODE=on`/`all` to retain traces for passing scenarios too.
+The separate **Manual Moodle Test Run** workflow can be launched from the GitHub Actions UI or mobile app. It supports `fast-api`, `local-smoke`, `local-teacher-workflow`, `local-grading`, and `local-grading-screencast`, uploads the Allure/Cucumber evidence artifacts, and can send a short stakeholder email digest when SMTP secrets are configured.
+
+Failed Cucumber browser scenarios save Playwright traces under ignored `traces/` by default (`MOODLE_TRACE_MODE=retain-on-failure`) and attach the trace zip to the Cucumber/Allure result where reporter plumbing supports attachments. Use `MOODLE_TRACE_MODE=off` to disable traces or `MOODLE_TRACE_MODE=on`/`all` to retain traces for passing scenarios too.
 
 Prepare a clean review archive from Git history rather than local generated artifacts:
 
@@ -253,4 +301,4 @@ Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission 
 
 ---
 
-Last updated: Phase 8 local grading and gradebook verification
+Last updated: Phase 8 demo/fast execution profiles and local grading evidence

@@ -13,11 +13,6 @@ interface StudentGradeExpectation {
 }
 
 export class GradebookPage extends BasePage {
-  async open(courseName: string): Promise<void> {
-    void courseName;
-    this.pendingSelectors('gradebook navigation');
-  }
-
   async openForCourse(courseId: string | number): Promise<void> {
     await this.gotoPath(`/grade/report/grader/index.php?id=${encodeURIComponent(String(courseId))}`);
     await this.dismissTourIfPresent();

@@ -1,0 +1,170 @@
+name: Manual Moodle Test Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: Moodle suite to run
+        required: true
+        default: local-grading
+        type: choice
+        options:
+          - fast-api
+          - local-smoke
+          - local-teacher-workflow
+          - local-grading
+          - local-grading-screencast
+      send_email:
+        description: Send stakeholder email digest when SMTP secrets are configured
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  run-selected-suite:
+    name: Run ${{ inputs.suite }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      MOODLE_BASE_URL: http://localhost:8080
+      MOODLE_ADMIN_USERNAME: admin
+      MOODLE_ADMIN_PASSWORD: changeme
+      MOODLE_TEACHER_USERNAME: teacher.qa
+      MOODLE_TEACHER_PASSWORD: changeme
+      MOODLE_STUDENT_USERNAME: student.qa
+      MOODLE_STUDENT_PASSWORD: changeme
+      MOODLE_MANAGER_USERNAME: manager.qa
+      MOODLE_MANAGER_PASSWORD: changeme
+      MOODLE_API_TOKEN: ''
+      MOODLE_COURSE_NAME: 'QA Automation Demo 101'
+      MOODLE_ASSIGNMENT_NAME: 'Essay: Test Automation Strategy'
+      MOODLE_AUDIO_RESOURCE_NAME: 'Sample Listening Task'
+      MOODLE_TARGET_GRADE: '82'
+      MOODLE_EXECUTION_PROFILE: fast
+      MOODLE_HEADLESS: 'true'
+      MOODLE_TRACE_MODE: retain-on-failure
+      MOODLE_VIDEO_MODE: retain-on-failure
+      MOODLE_TERMINAL_STEPS: 'true'
+      ALLURE_RUN_LABEL: ${{ inputs.suite }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        if: inputs.suite != 'fast-api'
+        run: npx playwright install --with-deps chromium
+
+      - name: Start local Moodle
+        if: inputs.suite != 'fast-api'
+        run: docker compose up -d
+
+      - name: Wait for Moodle
+        if: inputs.suite != 'fast-api'
+        run: npm run moodle:wait
+
+      - name: Run selected suite with Allure report
+        id: run_suite
+        shell: bash
+        run: |
+          set +e
+
+          case "${{ inputs.suite }}" in
+            fast-api)
+              npm run test:fast:api:report
+              ;;
+            local-smoke)
+              npm run test:fast:smoke:report
+              ;;
+            local-teacher-workflow)
+              npm run test:fast:teacher-workflow:report
+              ;;
+            local-grading)
+              npm run test:fast:grading:report
+              ;;
+            local-grading-screencast)
+              MOODLE_HEADLESS=true npm run test:demo:screencast:grading:report
+              ;;
+            *)
+              echo "Unknown suite: ${{ inputs.suite }}"
+              exit 1
+              ;;
+          esac
+
+          status=$?
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Write stakeholder email digest
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p reports
+          result="${{ job.status }}"
+          run_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          {
+            echo "Moodle QA execution result: ${result}"
+            echo ""
+            echo "Suite: ${{ inputs.suite }}"
+            echo "Repository: ${{ github.repository }}"
+            echo "Branch: ${{ github.ref_name }}"
+            echo "Run: ${run_url}"
+            echo ""
+            echo "Artifacts:"
+            echo "- Allure HTML report: reports/allure-report"
+            echo "- Raw Allure results: reports/allure-results"
+            echo "- Cucumber JSON/report files: reports/cucumber"
+            echo "- Screenshots/traces/videos when captured"
+          } > reports/stakeholder-email-digest.txt
+
+      - name: Upload Moodle evidence artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: moodle-${{ inputs.suite }}-evidence
+          path: |
+            reports/
+            screenshots/
+            videos/
+            traces/
+            artifacts/seed/controlled-data.generated.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Send stakeholder email digest
+        if: always() && inputs.send_email == true
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.MAIL_HOST }}
+          server_port: ${{ secrets.MAIL_PORT }}
+          username: ${{ secrets.MAIL_USERNAME }}
+          password: ${{ secrets.MAIL_PASSWORD }}
+          subject: Moodle QA ${{ inputs.suite }} - ${{ job.status }}
+          to: ${{ secrets.QA_REPORT_RECIPIENTS }}
+          from: ${{ secrets.QA_REPORT_FROM }}
+          body: |
+            Moodle QA execution result: ${{ job.status }}
+
+            Suite: ${{ inputs.suite }}
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+            Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            Evidence artifacts are attached to the GitHub Actions run:
+            - Allure HTML report: reports/allure-report
+            - Raw Allure results: reports/allure-results
+            - Cucumber report files: reports/cucumber
+            - Screenshots/traces/videos when captured
+
+      - name: Stop local Moodle
+        if: always() && inputs.suite != 'fast-api'
+        run: docker compose down -v

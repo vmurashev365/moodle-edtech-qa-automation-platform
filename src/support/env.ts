@@ -1,10 +1,9 @@
 import * as dotenv from 'dotenv';
+import { resolveRuntimeProfile, type TraceMode, type VideoMode } from './runtime-profile';
 
 dotenv.config();
 
 const localDemoUserPassword = 'QaDemo2026!';
-
-export type TraceMode = 'off' | 'retain-on-failure' | 'on';
 
 export interface TestEnv {
   baseUrl: string;
@@ -33,8 +32,14 @@ export interface TestEnv {
   gradebookUrl: string;
   studentDisplayName: string;
   readyTimeoutMs: number;
+  executionProfile: 'demo' | 'fast';
   headless: boolean;
+  slowMoMs: number;
+  stepDelayMs: number;
+  screencastEnabled: boolean;
   traceMode: TraceMode;
+  videoMode: VideoMode;
+  terminalStepsEnabled: boolean;
   traceOnFailure: boolean;
   videoOnFailure: boolean;
 }
@@ -55,34 +60,6 @@ function readSeededUserPassword(name: string): string {
   return value === 'changeme' ? localDemoUserPassword : value;
 }
 
-function readBoolean(name: string, fallback: boolean): boolean {
-  const value = process.env[name]?.trim().toLowerCase();
-
-  if (value === undefined || value === '') {
-    return fallback;
-  }
-
-  return ['1', 'true', 'yes', 'on'].includes(value);
-}
-
-function readTraceMode(): TraceMode {
-  const rawMode = process.env.TRACE_MODE?.trim().toLowerCase();
-
-  if (rawMode === 'off' || rawMode === 'retain-on-failure' || rawMode === 'on') {
-    return rawMode;
-  }
-
-  if (rawMode === 'all') {
-    return 'on';
-  }
-
-  if (rawMode && rawMode !== '') {
-    return 'retain-on-failure';
-  }
-
-  return readBoolean('TRACE_ON_FAILURE', true) ? 'retain-on-failure' : 'off';
-}
-
 function readNumber(name: string, fallback: number): number {
   const value = process.env[name]?.trim();
 
@@ -95,7 +72,7 @@ function readNumber(name: string, fallback: number): number {
 }
 
 export function loadEnv(): TestEnv {
-  const traceMode = readTraceMode();
+  const runtimeProfile = resolveRuntimeProfile();
 
   return {
     baseUrl: readEnv('MOODLE_BASE_URL', 'http://localhost:8080'),
@@ -124,10 +101,16 @@ export function loadEnv(): TestEnv {
     gradebookUrl: readEnv('MOODLE_GRADEBOOK_URL', ''),
     studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
     readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
-    headless: readBoolean('HEADLESS', true),
-    traceMode,
-    traceOnFailure: traceMode !== 'off',
-    videoOnFailure: readBoolean('VIDEO_ON_FAILURE', false)
+    executionProfile: runtimeProfile.name,
+    headless: runtimeProfile.headless,
+    slowMoMs: runtimeProfile.slowMoMs,
+    stepDelayMs: runtimeProfile.stepDelayMs,
+    screencastEnabled: runtimeProfile.screencastEnabled,
+    traceMode: runtimeProfile.traceMode,
+    videoMode: runtimeProfile.videoMode,
+    terminalStepsEnabled: runtimeProfile.terminalStepsEnabled,
+    traceOnFailure: runtimeProfile.traceMode === 'retain-on-failure',
+    videoOnFailure: runtimeProfile.videoMode === 'retain-on-failure'
   };
 }
 
@@ -197,8 +180,14 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       readyTimeoutMs: env.readyTimeoutMs,
       apiTokenConfigured: Boolean(env.apiToken),
+      executionProfile: env.executionProfile,
       headless: env.headless,
+      slowMoMs: env.slowMoMs,
+      stepDelayMs: env.stepDelayMs,
+      screencastEnabled: env.screencastEnabled,
       traceMode: env.traceMode,
+      videoMode: env.videoMode,
+      terminalStepsEnabled: env.terminalStepsEnabled,
       traceOnFailure: env.traceOnFailure,
       videoOnFailure: env.videoOnFailure
     }

@@ -49,10 +49,66 @@ Key variables:
 - `MOODLE_STUDENT_ID`
 - `MOODLE_SUBMISSION_ID`
 - `MOODLE_STUDENT_DISPLAY_NAME`
-- `TRACE_MODE` (`off`, `retain-on-failure`, `on`, or `all`)
+- `MOODLE_EXECUTION_PROFILE` (`demo` or `fast`)
+- `MOODLE_HEADLESS`
+- `MOODLE_SLOW_MO_MS`
+- `MOODLE_STEP_DELAY_MS`
+- `MOODLE_SCREENCAST`
+- `MOODLE_TRACE_MODE` (`off`, `retain-on-failure`, `on`, or `all`)
+- `MOODLE_VIDEO_MODE` (`off`, `retain-on-failure`, or `on`)
+- `MOODLE_TERMINAL_STEPS`
 - `UI_EXPECT_TIMEOUT_MS` for Page Object Playwright assertions, default `10000`
 
 The API token may be blank during skeleton validation. API mutation and backend reconciliation helpers remain pending until Moodle Web Services are configured.
+Legacy `HEADLESS`, `TRACE_MODE`, `TRACE_ON_FAILURE`, and `VIDEO_ON_FAILURE` variables are kept only for compatibility/deprecation clarity. Prefer the `MOODLE_*` runtime variables above for new local runs and CI configuration.
+
+## Execution Profiles
+
+The framework has two runtime profiles:
+
+- `demo`: headed browser, visible scenario/step terminal output, small pacing delays, and optional screencast/video with click feedback for reviewer walkthroughs.
+- `fast`: headless, no artificial delays, and suitable for CI/CD validation.
+
+The Moodle profile is named `demo` rather than production because the target is a local controlled Moodle demo instance, not a protected production or WAF-backed application.
+
+Run local demo workflows after seeding:
+
+```bash
+npm run moodle:start
+npm run moodle:wait
+npm run moodle:seed:ready
+npm run test:demo:smoke
+npm run test:demo:teacher-workflow
+npm run test:demo:grading
+```
+
+The teacher-workflow and grading demo/fast scripts run `moodle:seed:ready` before their scenario so they remain deterministic after a previous grading run.
+
+Record a visible grading walkthrough:
+
+```bash
+npm run test:demo:screencast:grading
+```
+
+Generate an Allure report for a local review run:
+
+```bash
+npm run test:demo:grading:report
+npm run test:demo:screencast:grading
+npm run test:fast:grading:report
+```
+
+The report wrapper clears stale Allure results, runs the selected Cucumber command, generates `reports/allure-report/` even when the scenario fails, opens the local Allure viewer automatically outside CI, and returns the original test exit code. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer. Moodle-specific metadata is written into `reports/allure-results/environment.properties`, `executor.json`, and `categories.json`.
+
+Run fast checks:
+
+```bash
+npm run type-check
+npm run lint
+npm run format:check
+npm run verify:env
+npm run test:fast:api
+```
 
 ## Controlled Seed Command
 
@@ -203,6 +259,18 @@ Safe skeleton API preflight:
 npm run test:api
 ```
 
+Fast API alias:
+
+```bash
+npm run test:fast:api
+```
+
+Allure report alias for CI-safe API evidence:
+
+```bash
+npm run test:fast:api:report
+```
+
 First real local controlled-Moodle smoke:
 
 ```bash
@@ -242,13 +310,15 @@ The commands above exclude `@wip`. Suites that still target planned security, me
 
 ## Failure Evidence
 
-For Cucumber browser scenarios, Playwright tracing starts in the Cucumber World when `TRACE_MODE` is not `off`. The default is `retain-on-failure`.
+For Cucumber browser scenarios, Playwright tracing starts in the Cucumber World when `MOODLE_TRACE_MODE` is not `off`. The default is `retain-on-failure`.
 
-- `TRACE_MODE=off`: no trace capture
-- `TRACE_MODE=retain-on-failure`: save `traces/<safe-scenario-name>-trace.zip` only for failed scenarios
-- `TRACE_MODE=on` or `TRACE_MODE=all`: save traces for every browser scenario
+- `MOODLE_TRACE_MODE=off`: no trace capture
+- `MOODLE_TRACE_MODE=retain-on-failure`: save `traces/<safe-scenario-name>-trace.zip` only for failed scenarios
+- `MOODLE_TRACE_MODE=on` or `MOODLE_TRACE_MODE=all`: save traces for every browser scenario
+- `MOODLE_VIDEO_MODE=on`: save videos for every browser scenario
+- `MOODLE_VIDEO_MODE=retain-on-failure`: keep videos only for failed browser scenarios
 
-Trace zips are ignored by git and attached to Cucumber/Allure results where the reporter supports binary attachments. Screenshots on failure remain enabled separately.
+Trace zips are ignored by git and attached to Cucumber/Allure results where the reporter supports binary attachments. Demo videos are written under ignored `videos/`, screenshots under ignored `screenshots/`, and local reports under ignored `reports/`.
 
 ## WIP / Pending Behavior
 
@@ -275,6 +345,29 @@ npm run report:allure:open
 ```
 
 The public Allure report link remains TBD until a real controlled Moodle run is published.
+
+## Manual GitHub Actions Workflow
+
+The **Manual Moodle Test Run** workflow is launched from GitHub Actions with `workflow_dispatch`. It is intended for QA/developer runs from a laptop, tablet, phone, or GitHub mobile app.
+
+Available suites:
+
+- `fast-api`: CI-safe API/environment preflight, no local Moodle Docker.
+- `local-smoke`: starts local Moodle in GitHub Actions and verifies the login page.
+- `local-teacher-workflow`: starts Moodle, seeds deterministic data, and runs the teacher submission-review workflow.
+- `local-grading`: starts Moodle, seeds the ungraded baseline, grades Student QA, and verifies the gradebook.
+- `local-grading-screencast`: same grading proof with video/click-visualizer artifacts while still running headless in GitHub Actions.
+
+The workflow uploads local evidence artifacts from `reports/`, `screenshots/`, `videos/`, `traces/`, and sanitized seed metadata. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
+
+Required email secrets when email sending is enabled:
+
+- `MAIL_HOST`
+- `MAIL_PORT`
+- `MAIL_USERNAME`
+- `MAIL_PASSWORD`
+- `QA_REPORT_RECIPIENTS`
+- `QA_REPORT_FROM`
 
 ## CI Limitations Before Moodle Workflow Execution
 

@@ -19,6 +19,7 @@ artifacts/seed/
 screenshots/
 videos/
 traces/
+tools/recordings/
 tools/
 *.har
 *.log

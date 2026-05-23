@@ -11,10 +11,34 @@ const common = {
   timeout: 30000
 };
 
+const localDemoPaths = [
+  'features/smoke/controlled-moodle-login-smoke.feature',
+  'features/e2e/teacher-dashboard-assignment-review.feature',
+  'features/e2e/teacher-assignment-grading.feature'
+];
+
+const demoCommon = {
+  ...common,
+  paths: localDemoPaths,
+  format: ['summary', 'json:reports/cucumber/cucumber-report.json', 'allure-cucumberjs/reporter']
+};
+
 module.exports = {
   default: {
     ...common,
     tags: 'not @wip'
+  },
+  demo: {
+    ...demoCommon,
+    tags: '@local and not @wip'
+  },
+  screencast: {
+    ...demoCommon,
+    tags: '@local and not @wip'
+  },
+  fast: {
+    ...common,
+    tags: 'not @local and not @wip'
   },
   smoke: {
     ...common,

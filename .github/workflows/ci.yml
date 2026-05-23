@@ -25,9 +25,12 @@ jobs:
       MOODLE_ASSIGNMENT_NAME: 'Essay: Test Automation Strategy'
       MOODLE_AUDIO_RESOURCE_NAME: 'Sample Listening Task'
       MOODLE_TARGET_GRADE: '82'
-      HEADLESS: 'true'
-      TRACE_ON_FAILURE: 'true'
-      VIDEO_ON_FAILURE: 'false'
+      MOODLE_EXECUTION_PROFILE: fast
+      MOODLE_HEADLESS: 'true'
+      MOODLE_TRACE_MODE: retain-on-failure
+      MOODLE_VIDEO_MODE: 'off'
+      MOODLE_TERMINAL_STEPS: 'false'
+      ALLURE_RUN_LABEL: static-fast-api
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -57,7 +60,7 @@ jobs:
         run: npm run verify:env
 
       - name: Run safe API preflight
-        run: npm run test:api
+        run: npm run test:fast:api:report
 
       - name: Upload Cucumber and Allure artifacts
         if: always()

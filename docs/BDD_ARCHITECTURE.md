@@ -182,13 +182,13 @@ Avoid these patterns:
 
 The Phase 3 skeleton maps this design into:
 
-| Design concept        | Phase 3 implementation target                                                                                             |
-| --------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| Atomic steps          | Cucumber step definitions backed by Playwright actions and API helper calls.                                              |
-| Domain steps          | Moodle-specific Cucumber vocabulary for teacher, student, course, assignment, submission, grade, and gradebook workflows. |
-| Composite steps       | Reused workflows for controlled setup, grading lifecycle, and gradebook reconciliation.                                   |
-| Page Objects / UI-MAP | Selector ownership and page interaction boundaries.                                                                       |
-| API helpers           | Setup, teardown, and canonical state validation.                                                                          |
-| Evidence hooks        | Allure attachments, screenshots on failure, API response attachments, trace/video on failure where enabled.               |
+| Design concept        | Phase 3 implementation target                                                                                                       |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| Atomic steps          | Cucumber step definitions backed by Playwright actions and API helper calls.                                                        |
+| Domain steps          | Moodle-specific Cucumber vocabulary for teacher, student, course, assignment, submission, grade, and gradebook workflows.           |
+| Composite steps       | Reused workflows for controlled setup, grading lifecycle, and gradebook reconciliation.                                             |
+| Page Objects / UI-MAP | Selector ownership and page interaction boundaries.                                                                                 |
+| API helpers           | Setup, teardown, and canonical state validation.                                                                                    |
+| Evidence hooks        | Terminal scenario/step visibility, Allure attachments, screenshots on failure, API response attachments, trace/video where enabled. |
 
 The current skeleton provides the structure and pending step contracts. Real Moodle workflow automation remains pending until controlled Moodle selectors and Web Service functions are verified.

@@ -1,10 +1,13 @@
 import type { BrowserContextOptions, LaunchOptions } from 'playwright';
 import { loadEnv } from './src/support/env';
+import { resolveRuntimeProfile } from './src/support/runtime-profile';
 
 const env = loadEnv();
+const runtimeProfile = resolveRuntimeProfile();
 
 export const browserLaunchOptions: LaunchOptions = {
-  headless: env.headless
+  headless: runtimeProfile.headless,
+  slowMo: runtimeProfile.slowMoMs
 };
 
 export const browserContextOptions: BrowserContextOptions = {
@@ -13,11 +16,12 @@ export const browserContextOptions: BrowserContextOptions = {
     width: 1366,
     height: 768
   },
-  recordVideo: env.videoOnFailure
-    ? {
-        dir: 'videos'
-      }
-    : undefined,
+  recordVideo:
+    runtimeProfile.videoMode !== 'off'
+      ? {
+          dir: 'videos'
+        }
+      : undefined,
   ignoreHTTPSErrors: true
 };
 

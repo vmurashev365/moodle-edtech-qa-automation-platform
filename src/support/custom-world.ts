@@ -6,6 +6,8 @@ import { browserContextOptions, browserLaunchOptions } from '../../playwright.co
 import { MoodleClient } from '../api/clients/MoodleClient';
 import type { EnvValidationResult, TestEnv } from './env';
 import { loadEnv } from './env';
+import { resolveRuntimeProfile, type RuntimeProfile } from './runtime-profile';
+import { installClickVisualizer } from './screencast/click-visualizer';
 
 export interface ApiPreflightState {
   envValidation?: EnvValidationResult;
@@ -13,6 +15,7 @@ export interface ApiPreflightState {
 
 export class MoodleWorld extends World {
   readonly env: TestEnv;
+  readonly runtimeProfile: RuntimeProfile;
   readonly moodleClient: MoodleClient;
   browser?: Browser;
   context?: BrowserContext;
@@ -23,6 +26,7 @@ export class MoodleWorld extends World {
   constructor(options: IWorldOptions) {
     super(options);
     this.env = loadEnv();
+    this.runtimeProfile = resolveRuntimeProfile();
     this.moodleClient = new MoodleClient(this.env);
   }
 
@@ -34,7 +38,7 @@ export class MoodleWorld extends World {
     this.browser = await chromium.launch(browserLaunchOptions);
     this.context = await this.browser.newContext(browserContextOptions);
 
-    if (this.env.traceMode !== 'off') {
+    if (this.runtimeProfile.traceMode !== 'off') {
       await this.context.tracing.start({
         screenshots: true,
         snapshots: true,
@@ -44,6 +48,10 @@ export class MoodleWorld extends World {
     }
 
     this.page = await this.context.newPage();
+
+    if (this.runtimeProfile.clickVisualizerEnabled) {
+      await installClickVisualizer(this.page);
+    }
   }
 
   requirePage(): Page {
@@ -59,7 +67,8 @@ export class MoodleWorld extends World {
       return undefined;
     }
 
-    const shouldSave = this.env.traceMode === 'on' || (this.env.traceMode === 'retain-on-failure' && failed);
+    const shouldSave =
+      this.runtimeProfile.traceMode === 'on' || (this.runtimeProfile.traceMode === 'retain-on-failure' && failed);
 
     try {
       if (!shouldSave) {
@@ -74,6 +83,21 @@ export class MoodleWorld extends World {
     } finally {
       this.tracingStarted = false;
     }
+  }
+
+  async getVideoPath(): Promise<string | undefined> {
+    return this.page
+      ?.video()
+      ?.path()
+      .catch(() => undefined);
+  }
+
+  shouldAttachVideo(failed: boolean): boolean {
+    return this.runtimeProfile.videoMode === 'on' || (this.runtimeProfile.videoMode === 'retain-on-failure' && failed);
+  }
+
+  shouldDiscardVideo(failed: boolean): boolean {
+    return this.runtimeProfile.videoMode === 'retain-on-failure' && !failed;
   }
 
   async closeBrowser(): Promise<void> {
