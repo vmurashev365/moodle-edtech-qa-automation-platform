@@ -18,7 +18,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 ## Demo video
 
 - 3–5 minute walkthrough: TBD
-- Local screencast capture: run `npm run test:demo:screencast:grading` after `npm run moodle:seed:ready`; generated videos/traces remain ignored local artifacts
+- Local screencast capture: run `npm run test:demo:screencast:all` for the full local demo set or `npm run test:demo:screencast:grading` for grading only; generated videos/traces remain ignored local artifacts
 
 ## Moodle evidence
 

@@ -80,13 +80,15 @@ npm run moodle:seed:ready
 npm run test:demo:smoke
 npm run test:demo:teacher-workflow
 npm run test:demo:grading
+npm run test:demo:screencast:all
 ```
 
 The teacher-workflow and grading demo/fast scripts run `moodle:seed:ready` before their scenario so they remain deterministic after a previous grading run.
 
-Record a visible grading walkthrough:
+Record visible walkthroughs:
 
 ```bash
+npm run test:demo:screencast:all
 npm run test:demo:screencast:grading
 ```
 
@@ -94,6 +96,7 @@ Generate an Allure report for a local review run:
 
 ```bash
 npm run test:demo:grading:report
+npm run test:demo:screencast:all
 npm run test:demo:screencast:grading
 npm run test:fast:grading:report
 ```
