@@ -302,3 +302,8 @@ Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission 
 ---
 
 Last updated: Phase 8 demo/fast execution profiles and local grading evidence
+
+
+Copyright © Victor Murashev.
+This repository is provided for portfolio and evaluation purposes only.
+Commercial reuse, redistribution, or client implementation without written permission is not allowed.
