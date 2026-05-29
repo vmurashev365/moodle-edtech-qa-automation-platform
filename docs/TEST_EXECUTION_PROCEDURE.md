@@ -361,7 +361,7 @@ Available suites:
 - `local-smoke`: starts local Moodle in GitHub Actions and verifies the login page.
 - `local-teacher-workflow`: starts Moodle, seeds deterministic data, and runs the teacher submission-review workflow.
 - `local-grading`: starts Moodle, seeds the ungraded baseline, grades Student QA, and verifies the gradebook.
-- `local-grading-screencast`: same grading proof with video/click-visualizer artifacts while still running headless in GitHub Actions.
+- `local-demo-screencast-all`: runs `npm run test:demo:screencast:all` headlessly in GitHub Actions, with Allure/Cucumber evidence plus video/click-visualizer artifacts.
 
 The workflow uploads local evidence artifacts from `reports/`, `screenshots/`, `videos/`, `traces/`, and sanitized seed metadata. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
 

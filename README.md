@@ -249,7 +249,7 @@ npm run test:wip
 
 GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 
-The separate **Manual Moodle Test Run** workflow can be launched from the GitHub Actions UI or mobile app. It supports `fast-api`, `local-smoke`, `local-teacher-workflow`, `local-grading`, and `local-grading-screencast`, uploads the Allure/Cucumber evidence artifacts, and can send a short stakeholder email digest when SMTP secrets are configured.
+The separate **Manual Moodle Test Run** workflow can be launched from the GitHub Actions UI or mobile app. It supports `fast-api`, `local-smoke`, `local-teacher-workflow`, `local-grading`, and `local-demo-screencast-all`, uploads the Allure/Cucumber evidence artifacts, and can send a short stakeholder email digest when SMTP secrets are configured.
 
 Failed Cucumber browser scenarios save Playwright traces under ignored `traces/` by default (`MOODLE_TRACE_MODE=retain-on-failure`) and attach the trace zip to the Cucumber/Allure result where reporter plumbing supports attachments. Use `MOODLE_TRACE_MODE=off` to disable traces or `MOODLE_TRACE_MODE=on`/`all` to retain traces for passing scenarios too.
 
