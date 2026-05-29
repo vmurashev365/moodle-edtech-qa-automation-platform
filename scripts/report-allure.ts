@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadEnv } from '../src/support/env';
 import { resolveRuntimeProfile } from '../src/support/runtime-profile';
@@ -62,7 +62,7 @@ function writeExecutor(): void {
   const runUrl = githubRunUrl();
   const payload = {
     name: 'Moodle EdTech QA Automation Platform',
-    type: process.env.GITHUB_ACTIONS === 'true' ? 'github-actions' : 'local',
+    type: 'edtech',
     buildName: process.env.ALLURE_RUN_LABEL || process.env.GITHUB_WORKFLOW || 'Local Moodle QA run',
     buildUrl: runUrl,
     reportName: process.env.ALLURE_REPORT_NAME || 'Moodle EdTech QA Automation Report',
@@ -104,6 +104,67 @@ function writeCategories(): void {
   writeFileSync(path.join(resultsDir, 'categories.json'), JSON.stringify(categories, null, 2));
 }
 
+function writeJsonIfMissing(filePath: string, payload: unknown): void {
+  if (!existsSync(filePath)) {
+    writeFileSync(filePath, JSON.stringify(payload, null, 2));
+  }
+}
+
+function writeMissingReportData(): void {
+  const widgetsDir = path.join(reportDir, 'widgets');
+  const dataDir = path.join(reportDir, 'data');
+
+  mkdirSync(widgetsDir, { recursive: true });
+  mkdirSync(dataDir, { recursive: true });
+
+  writeJsonIfMissing(path.join(widgetsDir, 'behaviors.json'), { total: 0, items: [] });
+  writeJsonIfMissing(path.join(dataDir, 'behaviors.json'), { uid: 'behaviors-empty', name: 'behaviors', children: [] });
+  writeJsonIfMissing(path.join(dataDir, 'packages.json'), { uid: 'packages-empty', name: 'packages', children: [] });
+}
+
+function svgDataUrl(svg: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function injectReportBranding(): void {
+  const assetsDir = path.join(reportDir, 'assets');
+  const indexPath = path.join(reportDir, 'index.html');
+  const stylesheetName = 'moodle-allure-branding.css';
+  const stylesheetPath = path.join(assetsDir, stylesheetName);
+  const bookIcon = svgDataUrl(
+    [
+      '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">',
+      '<rect width="64" height="64" rx="14" fill="#eaf4ff"/>',
+      '<path d="M14 14h15c4 0 7 3 7 7v29c0-4-3-7-7-7H14z" fill="#2f80ed"/>',
+      '<path d="M50 14H35c-4 0-7 3-7 7v29c0-4 3-7 7-7h15z" fill="#56cc9d"/>',
+      '<path d="M32 20v30" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>',
+      '<path d="M18 24h10M18 32h10M46 24H36M46 32H36" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>',
+      '</svg>'
+    ].join('')
+  );
+
+  writeFileSync(
+    stylesheetPath,
+    [
+      '.executor-icon__edtech,',
+      '.executor-icon__local {',
+      `  background-image: url("${bookIcon}") !important;`,
+      '  background-size: contain;',
+      '}',
+      ''
+    ].join('\n')
+  );
+
+  const indexHtml = readFileSync(indexPath, 'utf8');
+
+  if (!indexHtml.includes(stylesheetName)) {
+    writeFileSync(
+      indexPath,
+      indexHtml.replace('</head>', `    <link rel="stylesheet" href="assets/${stylesheetName}">\n  </head>`)
+    );
+  }
+}
+
 function main(): void {
   if (!hasAllureResults()) {
     console.error('[report:allure] no Allure result files found under reports/allure-results');
@@ -124,6 +185,11 @@ function main(): void {
   if (result.error) {
     console.error(`[report:allure] failed to execute Allure: ${result.error.message}`);
     process.exit(1);
+  }
+
+  if (result.status === 0) {
+    writeMissingReportData();
+    injectReportBranding();
   }
 
   process.exitCode = result.status ?? 1;
