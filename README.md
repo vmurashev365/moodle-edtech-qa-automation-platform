@@ -47,7 +47,7 @@ The deterministic local Moodle seed command:
 - applies generated IDs and URLs to the untracked local `.env` with `npm run moodle:seed:env`
 - writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`
 
-`npm run moodle:seed:env` creates `.env` from `.env.example` if needed and creates a timestamped `.env.backup.*` before editing an existing `.env`. Generated URLs use Moodle's configured local `wwwroot` so browser sessions stay on the host Moodle expects. The seed artifact is local setup evidence only. It is not public proof by itself.
+`npm run moodle:seed:env` creates `.env` from `.env.example` if needed and creates a timestamped `.env.backup.*` before editing an existing `.env`. Generated URLs use Moodle's configured local `wwwroot` so browser sessions stay on the host Moodle expects. `npm run moodle:seed:ready` also verifies seeded teacher/student authentication through Moodle CLI before browser scenarios run. The seed artifact is local setup evidence only. It is not public proof by itself.
 
 ## Phase 6 grading and gradebook status
 

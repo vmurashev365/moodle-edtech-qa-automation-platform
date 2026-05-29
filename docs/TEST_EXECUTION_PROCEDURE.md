@@ -128,6 +128,8 @@ The seed runs PHP inside the local Docker Moodle container and uses Moodle inter
 
 `npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates deterministic Moodle metadata from the generated `envSnippet`, including `MOODLE_STUDENT_ID`, `MOODLE_STUDENT_EMAIL`, `MOODLE_SUBMISSION_ID`, and `MOODLE_ASSIGNMENT_GRADING_URL`, and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
 
+`npm run moodle:seed:auth` verifies the seeded teacher and student credentials through Moodle's CLI authentication path. It runs after `.env` sync inside `npm run moodle:seed:ready` so a bad seeded password fails before browser UI steps.
+
 The generated artifact is local setup metadata, not public proof by itself. Mission 6 Recorder/Codegen evidence is local under ignored `tools/recordings/localhost_mission6`.
 
 Convenience readiness command:
@@ -136,7 +138,7 @@ Convenience readiness command:
 npm run moodle:seed:ready
 ```
 
-This runs seed, `.env` sync, `check:data`, and `check:grading-data` in sequence.
+This runs seed, `.env` sync, seeded auth verification, `check:data`, and `check:grading-data` in sequence.
 
 ## Phase 5 Seed Checklist
 
@@ -384,3 +386,5 @@ GitHub Actions currently validates:
 - report artifact upload
 
 CI does not start Moodle, does not run `npm run moodle:seed`, does not run `npm run moodle:seed:env`, does not run WIP Moodle UI flows, does not run `test:local:smoke`, does not run `test:local:teacher-workflow`, does not run `test:local:grading`, and does not target Mount Orange. Local Moodle workflow execution remains manual until a controlled Moodle service is intentionally added to CI.
+
+The separate manual Moodle workflow starts a controlled local Moodle container for selected local suites. It intentionally lets generated seed metadata from `.env` drive local-suite browser runs instead of keeping generated URLs or seeded teacher/student passwords as job-level environment overrides.

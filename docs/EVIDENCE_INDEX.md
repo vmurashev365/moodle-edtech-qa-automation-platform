@@ -22,7 +22,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 ## Moodle evidence
 
-- Controlled Moodle setup: Docker Compose available; `npm run moodle:seed` creates deterministic local users/course/assignment/enrolments/submission; `npm run moodle:seed:env` applies generated metadata to untracked local `.env`; generated local artifact is ignored and not public proof by itself
+- Controlled Moodle setup: Docker Compose available; `npm run moodle:seed` creates deterministic local users/course/assignment/enrolments/submission; `npm run moodle:seed:env` applies generated metadata to untracked local `.env`; `npm run moodle:seed:auth` verifies seeded teacher/student authentication through Moodle CLI; generated local artifact is ignored and not public proof by itself
 - Phase 4 local controlled Moodle smoke: implemented and passed locally; public report/screenshot link TBD
 - Phase 5 local teacher submission review: implemented for controlled seeded Moodle; run `npm run moodle:seed:ready` or run seed plus `.env` sync before the workflow; public report/screenshot link TBD
 - Phase 5 Mission 1-5 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission1-4` and `tools/recordings/localhost_mission5`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)

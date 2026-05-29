@@ -26,13 +26,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      MOODLE_BASE_URL: http://localhost:8080
       MOODLE_ADMIN_USERNAME: admin
       MOODLE_ADMIN_PASSWORD: changeme
       MOODLE_TEACHER_USERNAME: teacher.qa
-      MOODLE_TEACHER_PASSWORD: changeme
       MOODLE_STUDENT_USERNAME: student.qa
-      MOODLE_STUDENT_PASSWORD: changeme
       MOODLE_MANAGER_USERNAME: manager.qa
       MOODLE_MANAGER_PASSWORD: changeme
       MOODLE_API_TOKEN: ''
@@ -77,6 +74,22 @@ jobs:
         shell: bash
         run: |
           set +e
+
+          if [[ "${{ inputs.suite }}" != "fast-api" ]]; then
+            # Local Moodle suites must use generated seed metadata from .env, not stale job-level values.
+            unset MOODLE_BASE_URL
+            unset MOODLE_COURSE_ID
+            unset MOODLE_COURSE_URL
+            unset MOODLE_ASSIGNMENT_ID
+            unset MOODLE_STUDENT_ID
+            unset MOODLE_SUBMISSION_ID
+            unset MOODLE_ASSIGNMENT_URL
+            unset MOODLE_ASSIGNMENT_SUBMISSIONS_URL
+            unset MOODLE_ASSIGNMENT_GRADING_URL
+            unset MOODLE_GRADEBOOK_URL
+            unset MOODLE_TEACHER_PASSWORD
+            unset MOODLE_STUDENT_PASSWORD
+          fi
 
           case "${{ inputs.suite }}" in
             fast-api)
