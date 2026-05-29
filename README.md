@@ -273,7 +273,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
 
 ## Current folder structure
 
-```
+```text
 / (repo root)
   README.md
   AGENTS.md

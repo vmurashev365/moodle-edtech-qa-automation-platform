@@ -4,7 +4,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 ## Main repository
 
-- GitHub repository: https://github.com/vmurashev365/moodle-edtech-qa-automation-platform
+- GitHub repository: [moodle-edtech-qa-automation-platform](https://github.com/vmurashev365/moodle-edtech-qa-automation-platform)
 
 ## Live reports
 
@@ -81,7 +81,7 @@ These artifacts distinguish implemented local workflows from planned coverage. A
 
 ## Related portfolio implementations
 
-- Hora Services Logistics QA Platform: https://github.com/vmurashev365/logistics-qa-automation-platform
+- Hora Services Logistics QA Platform: [logistics-qa-automation-platform](https://github.com/vmurashev365/logistics-qa-automation-platform)
 
 ## What to review first
 
