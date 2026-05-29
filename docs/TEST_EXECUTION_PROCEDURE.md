@@ -92,6 +92,8 @@ npm run test:demo:screencast:all
 npm run test:demo:screencast:grading
 ```
 
+These local screencast commands force a headed browser and slower presentation pacing so the live Moodle interaction and click visualizer are visible during the run. GitHub Actions may still set `MOODLE_HEADLESS=true` when the goal is artifact capture rather than a live desktop walkthrough.
+
 Generate an Allure report for a local review run:
 
 ```bash

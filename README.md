@@ -216,7 +216,7 @@ npm run test:fast:api
 
 Demo videos are written under ignored `videos/`, traces under ignored `traces/`, screenshots under ignored `screenshots/`, and local reports under ignored `reports/`.
 Teacher-workflow and grading demo/fast scripts run the seed readiness path before the scenario so they stay repeatable after a previous grading run.
-The demo screencast commands record Playwright video with click target highlighting, regenerate the Allure HTML evidence package, and open the local Allure viewer automatically after the Cucumber run. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer.
+The demo screencast commands force a headed local browser, use slower presentation pacing, record Playwright video with click target highlighting, regenerate the Allure HTML evidence package, and open the local Allure viewer automatically after the Cucumber run. GitHub Actions may still set `MOODLE_HEADLESS=true` for artifact-only screencast evidence. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer.
 
 Generate an Allure HTML evidence package while preserving the test exit code:
 

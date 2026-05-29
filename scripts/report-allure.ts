@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { loadEnv } from '../src/support/env';
-import { resolveRuntimeProfile } from '../src/support/runtime-profile';
+import { resolveRuntimeProfile, type RuntimeProfile } from '../src/support/runtime-profile';
 
 const resultsDir = path.resolve('reports', 'allure-results');
 const reportDir = path.resolve('reports', 'allure-report');
@@ -31,15 +31,52 @@ function githubRunUrl(): string | undefined {
   return `${serverUrl}/${repository}/actions/runs/${runId}`;
 }
 
+function readRuntimeProfileSnapshot(): RuntimeProfile {
+  const fallback = resolveRuntimeProfile();
+  const snapshotPath = path.join(resultsDir, 'runtime-profile.json');
+
+  if (!existsSync(snapshotPath)) {
+    return fallback;
+  }
+
+  try {
+    const payload = JSON.parse(readFileSync(snapshotPath, 'utf8')) as Partial<RuntimeProfile>;
+
+    return {
+      ...fallback,
+      name: payload.name === 'demo' || payload.name === 'fast' ? payload.name : fallback.name,
+      headless: typeof payload.headless === 'boolean' ? payload.headless : fallback.headless,
+      slowMoMs: typeof payload.slowMoMs === 'number' ? payload.slowMoMs : fallback.slowMoMs,
+      stepDelayMs: typeof payload.stepDelayMs === 'number' ? payload.stepDelayMs : fallback.stepDelayMs,
+      screencastEnabled:
+        typeof payload.screencastEnabled === 'boolean' ? payload.screencastEnabled : fallback.screencastEnabled,
+      traceMode:
+        payload.traceMode === 'off' || payload.traceMode === 'retain-on-failure' || payload.traceMode === 'on'
+          ? payload.traceMode
+          : fallback.traceMode,
+      videoMode:
+        payload.videoMode === 'off' || payload.videoMode === 'retain-on-failure' || payload.videoMode === 'on'
+          ? payload.videoMode
+          : fallback.videoMode,
+      terminalStepsEnabled:
+        typeof payload.terminalStepsEnabled === 'boolean' ? payload.terminalStepsEnabled : fallback.terminalStepsEnabled
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 function writeEnvironmentProperties(): void {
   const env = loadEnv();
-  const runtimeProfile = resolveRuntimeProfile();
+  const runtimeProfile = readRuntimeProfileSnapshot();
   const lines = [
     ['Framework', 'Moodle EdTech QA Automation Platform'],
     ['Runner', 'Cucumber + Playwright'],
     ['ExecutionProfile', runtimeProfile.name],
     ['Headless', runtimeProfile.headless],
     ['Screencast', runtimeProfile.screencastEnabled],
+    ['SlowMoMs', runtimeProfile.slowMoMs],
+    ['StepDelayMs', runtimeProfile.stepDelayMs],
     ['TraceMode', runtimeProfile.traceMode],
     ['VideoMode', runtimeProfile.videoMode],
     ['BaseURL', env.baseUrl],
