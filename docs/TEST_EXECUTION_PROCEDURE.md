@@ -54,7 +54,7 @@ Key variables:
 - `MOODLE_HEADLESS`
 - `MOODLE_SLOW_MO_MS`
 - `MOODLE_STEP_DELAY_MS`
-- `MOODLE_SCREENCAST`
+- `MOODLE_SCREENCAST` (blank by default; `true` records video and trace for every scenario. The `--screencast` runner flag sets it per run)
 - `MOODLE_TRACE_MODE` (`off`, `retain-on-failure`, `on`, or `all`)
 - `MOODLE_VIDEO_MODE` (`off`, `retain-on-failure`, or `on`)
 - `MOODLE_TERMINAL_STEPS`

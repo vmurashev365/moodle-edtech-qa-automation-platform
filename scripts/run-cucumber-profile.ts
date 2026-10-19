@@ -2,6 +2,9 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import * as dotenv from 'dotenv';
+
+import { resolveRuntimeProfile, type RuntimeProfile } from '../src/support/runtime-profile';
 import { logger } from '../src/utils/logger';
 
 interface CucumberJsonElement {
@@ -111,25 +114,6 @@ function isCiEnvironment(env: NodeJS.ProcessEnv): boolean {
   return env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
 }
 
-function readBooleanEnv(value: string | undefined, fallback: boolean): boolean {
-  const cleaned = clean(value)?.toLowerCase();
-
-  if (!cleaned) {
-    return fallback;
-  }
-
-  return !['0', 'false', 'no', 'off'].includes(cleaned);
-}
-
-function readModeEnv(value: string | undefined, fallback: string): string {
-  return clean(value) ?? fallback;
-}
-
-function readNumberEnv(value: string | undefined, fallback: number): number {
-  const parsed = Number.parseInt(clean(value) ?? '', 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
-}
-
 function buildEnv(profile: 'demo' | 'fast', screencast: boolean, headlessOverride?: boolean): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = {
     ...process.env,
@@ -157,19 +141,17 @@ function buildEnv(profile: 'demo' | 'fast', screencast: boolean, headlessOverrid
   return env;
 }
 
-function writeRuntimeProfileSnapshot(env: NodeJS.ProcessEnv): void {
+function writeRuntimeProfileSnapshot(profile: RuntimeProfile): void {
   const resultsDir = path.resolve('reports', 'allure-results');
-  const profileName = clean(env.MOODLE_EXECUTION_PROFILE) ?? 'fast';
-  const screencastEnabled = readBooleanEnv(env.MOODLE_SCREENCAST, false);
   const payload = {
-    name: profileName,
-    headless: readBooleanEnv(env.MOODLE_HEADLESS, profileName === 'fast'),
-    screencastEnabled,
-    slowMoMs: readNumberEnv(env.MOODLE_SLOW_MO_MS, profileName === 'demo' ? 200 : 0),
-    stepDelayMs: readNumberEnv(env.MOODLE_STEP_DELAY_MS, profileName === 'demo' ? 350 : 0),
-    traceMode: screencastEnabled ? 'on' : readModeEnv(env.MOODLE_TRACE_MODE, 'retain-on-failure'),
-    videoMode: screencastEnabled ? 'on' : readModeEnv(env.MOODLE_VIDEO_MODE, 'off'),
-    terminalStepsEnabled: readBooleanEnv(env.MOODLE_TERMINAL_STEPS, profileName === 'demo'),
+    name: profile.name,
+    headless: profile.headless,
+    screencastEnabled: profile.screencastEnabled,
+    slowMoMs: profile.slowMoMs,
+    stepDelayMs: profile.stepDelayMs,
+    traceMode: profile.traceMode,
+    videoMode: profile.videoMode,
+    terminalStepsEnabled: profile.terminalStepsEnabled,
     generatedAt: new Date().toISOString()
   };
 
@@ -197,14 +179,18 @@ function main(): void {
     cucumberArgs.push('--format', `json:${guardReportRelativePath}`);
   }
 
+  // Load .env without overriding the outer environment, exactly as the Cucumber child process will,
+  // so the snapshot describes the profile the browser actually runs with.
+  dotenv.config();
   const runEnv = buildEnv(parsed.executionProfile, parsed.screencast, parsed.headlessOverride);
-  writeRuntimeProfileSnapshot(runEnv);
+  const runtimeProfile = resolveRuntimeProfile(runEnv);
+  writeRuntimeProfileSnapshot(runtimeProfile);
 
   logger.info(
     `Running Cucumber in ${parsed.executionProfile}${parsed.screencast ? ' screencast' : ''} mode: ${cucumberArgs.join(' ')}`
   );
   logger.info(
-    `Runtime profile resolved for this run: headless=${runEnv.MOODLE_HEADLESS}, screencast=${runEnv.MOODLE_SCREENCAST ?? 'false'}, video=${runEnv.MOODLE_VIDEO_MODE ?? '<default>'}, trace=${runEnv.MOODLE_TRACE_MODE ?? '<default>'}, slowMoMs=${runEnv.MOODLE_SLOW_MO_MS ?? '<default>'}, stepDelayMs=${runEnv.MOODLE_STEP_DELAY_MS ?? '<default>'}`
+    `Runtime profile resolved for this run: headless=${runtimeProfile.headless}, screencast=${runtimeProfile.screencastEnabled}, video=${runtimeProfile.videoMode}, trace=${runtimeProfile.traceMode}, slowMoMs=${runtimeProfile.slowMoMs}, stepDelayMs=${runtimeProfile.stepDelayMs}`
   );
 
   const result = spawnSync(process.execPath, [cucumberBin, ...cucumberArgs], {

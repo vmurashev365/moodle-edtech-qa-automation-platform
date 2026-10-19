@@ -54,8 +54,8 @@ function clean(value: string | undefined): string | undefined {
   return cleaned ? cleaned : undefined;
 }
 
-function readExecutionProfile(): { name: ExecutionProfileName; explicit: boolean } {
-  const rawProfile = clean(process.env.MOODLE_EXECUTION_PROFILE)?.toLowerCase();
+function readExecutionProfile(env: NodeJS.ProcessEnv): { name: ExecutionProfileName; explicit: boolean } {
+  const rawProfile = clean(env.MOODLE_EXECUTION_PROFILE)?.toLowerCase();
 
   if (rawProfile === 'demo' || rawProfile === 'fast') {
     return { name: rawProfile, explicit: true };
@@ -68,8 +68,8 @@ function readExecutionProfile(): { name: ExecutionProfileName; explicit: boolean
   return { name: 'fast', explicit: false };
 }
 
-function readBoolean(name: string): boolean | undefined {
-  const value = clean(process.env[name])?.toLowerCase();
+function readBoolean(env: NodeJS.ProcessEnv, name: string): boolean | undefined {
+  const value = clean(env[name])?.toLowerCase();
 
   if (value === undefined) {
     return undefined;
@@ -86,8 +86,8 @@ function readBoolean(name: string): boolean | undefined {
   return undefined;
 }
 
-function readNumber(name: string): number | undefined {
-  const value = clean(process.env[name]);
+function readNumber(env: NodeJS.ProcessEnv, name: string): number | undefined {
+  const value = clean(env[name]);
 
   if (!value) {
     return undefined;
@@ -97,10 +97,10 @@ function readNumber(name: string): number | undefined {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
-function readTraceMode(defaultValue: TraceMode, explicitProfile: boolean): TraceMode {
+function readTraceMode(env: NodeJS.ProcessEnv, defaultValue: TraceMode, explicitProfile: boolean): TraceMode {
   const rawMode =
-    clean(process.env.MOODLE_TRACE_MODE)?.toLowerCase() ??
-    (!explicitProfile ? clean(process.env.TRACE_MODE)?.toLowerCase() : undefined);
+    clean(env.MOODLE_TRACE_MODE)?.toLowerCase() ??
+    (!explicitProfile ? clean(env.TRACE_MODE)?.toLowerCase() : undefined);
 
   if (rawMode === 'off' || rawMode === 'retain-on-failure' || rawMode === 'on') {
     return rawMode;
@@ -113,40 +113,42 @@ function readTraceMode(defaultValue: TraceMode, explicitProfile: boolean): Trace
   return defaultValue;
 }
 
-function readVideoMode(defaultValue: VideoMode, explicitProfile: boolean): VideoMode {
-  const rawMode = clean(process.env.MOODLE_VIDEO_MODE)?.toLowerCase();
+function readVideoMode(env: NodeJS.ProcessEnv, defaultValue: VideoMode, explicitProfile: boolean): VideoMode {
+  const rawMode = clean(env.MOODLE_VIDEO_MODE)?.toLowerCase();
 
   if (rawMode === 'off' || rawMode === 'retain-on-failure' || rawMode === 'on') {
     return rawMode;
   }
 
-  if (!explicitProfile && readBoolean('VIDEO_ON_FAILURE') === true) {
+  if (!explicitProfile && readBoolean(env, 'VIDEO_ON_FAILURE') === true) {
     return 'retain-on-failure';
   }
 
   return defaultValue;
 }
 
-export function resolveRuntimeProfile(): RuntimeProfile {
-  const executionProfile = readExecutionProfile();
+// Single source of truth for the runtime profile. The Cucumber World, Playwright config and the
+// run-cucumber-profile snapshot all resolve it from the environment the browser process receives.
+export function resolveRuntimeProfile(env: NodeJS.ProcessEnv = process.env): RuntimeProfile {
+  const executionProfile = readExecutionProfile(env);
   const defaults = defaultsByProfile[executionProfile.name];
-  const screencastEnabled = readBoolean('MOODLE_SCREENCAST') ?? defaults.screencastEnabled;
+  const screencastEnabled = readBoolean(env, 'MOODLE_SCREENCAST') ?? defaults.screencastEnabled;
   const headless =
-    readBoolean('MOODLE_HEADLESS') ??
-    (!executionProfile.explicit ? readBoolean('HEADLESS') : undefined) ??
+    readBoolean(env, 'MOODLE_HEADLESS') ??
+    (!executionProfile.explicit ? readBoolean(env, 'HEADLESS') : undefined) ??
     defaults.headless;
-  const videoMode = screencastEnabled ? 'on' : readVideoMode(defaults.videoMode, executionProfile.explicit);
-  const traceMode = screencastEnabled ? 'on' : readTraceMode(defaults.traceMode, executionProfile.explicit);
+  const videoMode = screencastEnabled ? 'on' : readVideoMode(env, defaults.videoMode, executionProfile.explicit);
+  const traceMode = screencastEnabled ? 'on' : readTraceMode(env, defaults.traceMode, executionProfile.explicit);
 
   return {
     name: executionProfile.name,
     headless,
-    slowMoMs: readNumber('MOODLE_SLOW_MO_MS') ?? defaults.slowMoMs,
-    stepDelayMs: readNumber('MOODLE_STEP_DELAY_MS') ?? defaults.stepDelayMs,
+    slowMoMs: readNumber(env, 'MOODLE_SLOW_MO_MS') ?? defaults.slowMoMs,
+    stepDelayMs: readNumber(env, 'MOODLE_STEP_DELAY_MS') ?? defaults.stepDelayMs,
     screencastEnabled,
     traceMode,
     videoMode,
-    terminalStepsEnabled: readBoolean('MOODLE_TERMINAL_STEPS') ?? defaults.terminalStepsEnabled,
+    terminalStepsEnabled: readBoolean(env, 'MOODLE_TERMINAL_STEPS') ?? defaults.terminalStepsEnabled,
     clickVisualizerEnabled: executionProfile.name === 'demo' || screencastEnabled
   };
 }
