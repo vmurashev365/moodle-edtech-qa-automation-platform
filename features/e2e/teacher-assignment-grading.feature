@@ -1,4 +1,4 @@
-@e2e @teacher @student @assignment @gradebook @controlled-moodle @local @phase6
+@e2e @teacher @student @assignment @gradebook @controlled-moodle @local @phase6 @ungraded-baseline
 Feature: Teacher assignment grading
   The controlled Moodle workflow should protect grade save and gradebook reconciliation.
 

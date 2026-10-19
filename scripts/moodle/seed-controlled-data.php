@@ -65,6 +65,8 @@ require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/enrol/manual/locallib.php');
 require_once($CFG->dirroot . '/mod/assign/lib.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
+require_once($CFG->libdir . '/gradelib.php');
+require_once(__DIR__ . '/lib/grade-baseline.php');
 
 $requestedbaseurl = seed_env('MOODLE_BASE_URL', 'http://localhost:8080');
 $baseurl = !empty($CFG->wwwroot) ? (string) $CFG->wwwroot : $requestedbaseurl;
@@ -120,7 +122,7 @@ try {
 
     $assignment = seed_upsert_assignment($course, $assignmentname);
     $assignment['submission'] = seed_ensure_online_text_submission($course, $assignment['cm'], $student, $submissiontext);
-    $gradebaseline = seed_reset_grade_to_ungraded($course, $assignment['cm'], $student);
+    $gradebaseline = qa_reset_grade_to_ungraded($course, $assignment['cm'], $student);
 
     $courseurl = seed_build_url($baseurl, "/course/view.php?id={$course->id}");
     $assignmenturl = seed_build_url($baseurl, "/mod/assign/view.php?id={$assignment['cm']->id}");
@@ -476,42 +478,4 @@ function seed_ensure_online_text_submission(
 
     $submission = $assignment->get_user_submission($student->id, false);
     return $submission;
-}
-
-function seed_reset_grade_to_ungraded(stdClass $course, stdClass $cm, stdClass $student): array {
-    global $USER;
-
-    $admin = $USER;
-    $context = context_module::instance($cm->id);
-    $assignment = new assign($context, $cm, $course);
-
-    // Prefer Moodle's assign grading API over deleting grade rows; it keeps assign_grades and gradebook state aligned.
-    $data = (object) [
-        'grade' => '-1',
-        'attemptnumber' => -1,
-        'addattempt' => 0,
-        'sendstudentnotifications' => false,
-        'assignfeedbackcomments_editor' => [
-            'text' => '',
-            'format' => FORMAT_HTML,
-            'itemid' => 0,
-        ],
-    ];
-
-    $assignment->save_grade((int) $student->id, $data);
-
-    $assignrecord = clone $assignment->get_instance();
-    $assignrecord->cmidnumber = $cm->idnumber;
-    assign_update_grades($assignrecord, (int) $student->id);
-
-    \core\session\manager::set_user($admin);
-    $USER = $admin;
-
-    $grade = $assignment->get_user_grade((int) $student->id, true);
-
-    return [
-        'mode' => 'ungraded',
-        'assignGrade' => (float) $grade->grade,
-        'expectedBeforeUiGrade' => 'not graded',
-    ];
 }

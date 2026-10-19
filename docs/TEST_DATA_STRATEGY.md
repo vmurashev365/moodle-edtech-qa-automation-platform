@@ -106,7 +106,7 @@ Recommended controls:
 - Prefer API setup over UI setup for speed and reliability.
 - Track created records in scenario context during implementation.
 - Clean up even when the UI scenario fails.
-- Reset grades and submissions to known baseline before scenarios that mutate them.
+- Reset grades and submissions to known baseline before scenarios that mutate them. Implemented for the Student QA grade by the `@ungraded-baseline` Before hook, which runs a lightweight reset script instead of the full seed.
 - Avoid hardcoded assumptions that are not verified in setup.
 - Keep Mount Orange recon data out of automated runs and evidence claims.
 
@@ -171,7 +171,7 @@ Phase 6 targets the business-critical teacher grading and gradebook reconciliati
 - configured gradebook URL or course ID
 - assignment grade scale that accepts the configured target grade, default `82`
 - generated single-user grading URL for Student QA
-- seed-reset ungraded baseline before each grading run
+- ungraded baseline restored before each grade-dependent scenario by the `@ungraded-baseline` Before hook
 
 Use `npm run moodle:seed:ready` before attempting the grading workflow. The seed creates the deterministic submission and resets the grade to Moodle's ungraded baseline; it does not pre-grade with the target grade. Mission 6 Recorder/Codegen selector evidence is local under ignored `tools/recordings/localhost_mission6`.
 

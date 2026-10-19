@@ -1,4 +1,4 @@
-@e2e @web @teacher @assignment @controlled-moodle @local @phase5
+@e2e @web @teacher @assignment @controlled-moodle @local @phase5 @ungraded-baseline
 Feature: Teacher dashboard assignment review
   The teacher should be able to move from the dashboard into assignment submission review.
 

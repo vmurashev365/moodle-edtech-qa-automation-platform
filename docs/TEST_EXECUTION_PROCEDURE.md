@@ -83,7 +83,7 @@ npm run test:demo:grading
 npm run test:demo:screencast:all
 ```
 
-The teacher-workflow and grading demo/fast scripts run `moodle:seed:ready` before their scenario so they remain deterministic after a previous grading run.
+Scenarios that depend on the grading state are tagged `@ungraded-baseline`. A tagged Before hook (`src/support/ungraded-baseline.ts`) runs `scripts/moodle/reset-ungraded-baseline.php` in the Moodle container, resets Student QA's grade to "not graded" with the same assign grading API the seed uses, and fails the scenario if Docker is unavailable or the reset does not take effect. Correctness therefore does not depend on feature file order. The teacher-workflow and grading demo/fast scripts still run `moodle:seed:ready` once per command so the seeded data and `.env` metadata exist.
 
 Record visible walkthroughs:
 
