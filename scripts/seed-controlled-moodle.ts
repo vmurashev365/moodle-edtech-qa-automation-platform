@@ -1,6 +1,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { localDemoUserPassword } from '../src/support/demo-credentials';
 import { loadEnv } from '../src/support/env';
 import { requireDocker, requireRunningMoodleService, runMoodleCliScript } from '../src/support/moodle-cli';
 import { logger } from '../src/utils/logger';
@@ -56,7 +57,6 @@ interface SeedOutput {
 
 const seedScriptPath = '/qa-seed/seed-controlled-data.php';
 const artifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
-const localDemoPassword = 'QaDemo2026!';
 
 function buildSeedEnv(): Record<string, string> {
   const env = loadEnv();
@@ -64,19 +64,15 @@ function buildSeedEnv(): Record<string, string> {
   return {
     MOODLE_BASE_URL: env.baseUrl,
     MOODLE_TEACHER_USERNAME: env.teacherUsername,
-    MOODLE_TEACHER_PASSWORD: seedPassword(env.teacherPassword),
+    MOODLE_TEACHER_PASSWORD: env.teacherPassword,
     MOODLE_STUDENT_USERNAME: env.studentUsername,
-    MOODLE_STUDENT_PASSWORD: seedPassword(env.studentPassword),
+    MOODLE_STUDENT_PASSWORD: env.studentPassword,
     MOODLE_STUDENT_DISPLAY_NAME: env.studentDisplayName || 'Student QA',
     MOODLE_STUDENT_EMAIL: env.studentEmail || 'student.qa@example.test',
     MOODLE_COURSE_NAME: env.courseName,
     MOODLE_ASSIGNMENT_NAME: env.assignmentName,
     MOODLE_TARGET_GRADE: String(env.targetGrade)
   };
-}
-
-function seedPassword(value: string): string {
-  return value && value !== 'changeme' ? value : localDemoPassword;
 }
 
 function parseSeedOutput(stdout: string): SeedOutput {
@@ -135,7 +131,7 @@ function printSummary(seedOutput: SeedOutput): void {
   console.log('  npm run check:grading-data');
   console.log('');
   console.log(
-    `Credential note: teacher/student passwords come from your local env; blank or legacy placeholder values are seeded with the local demo default "${localDemoPassword}".`
+    `Credential note: teacher/student passwords come from your local env; blank or legacy placeholder values are seeded with the local demo default "${localDemoUserPassword}".`
   );
 }
 

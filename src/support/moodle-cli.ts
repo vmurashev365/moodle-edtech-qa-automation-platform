@@ -12,18 +12,21 @@ export interface MoodleCliScriptOptions {
   secretEnvNames?: string[];
 }
 
+interface RunCommandOptions {
+  allowFailure?: boolean;
+  env?: Record<string, string>;
+  secrets?: string[];
+}
+
 export const moodleServiceName = 'moodle';
 // Bitnami Moodle serves PHP as `daemon`. CLI scripts must run as the same user; running them as root
 // leaves root-owned moodledata/temp directories that later break web requests with permission errors.
 export const moodleCliUser = 'daemon';
 
-export function runCommand(
-  command: string,
-  args: string[],
-  options: { allowFailure?: boolean; secretEnvNames?: string[] } = {}
-): CommandResult {
+export function runCommand(command: string, args: string[], options: RunCommandOptions = {}): CommandResult {
   const result = spawnSync(command, args, {
     encoding: 'utf8',
+    env: options.env ? { ...process.env, ...options.env } : process.env,
     windowsHide: true
   });
 
@@ -35,23 +38,18 @@ export function runCommand(
   };
 
   if (!options.allowFailure && (result.error || result.status !== 0)) {
-    throw new Error(formatCommandFailure(command, args, commandResult, options.secretEnvNames));
+    throw new Error(redactSecrets(formatCommandFailure(command, args, commandResult), options.secrets ?? []));
   }
 
   return commandResult;
 }
 
-export function formatCommandFailure(
-  command: string,
-  args: string[],
-  result: CommandResult,
-  secretEnvNames: string[] = []
-): string {
-  const redact = (arg: string): string => {
-    const name = secretEnvNames.find((secretName) => arg.startsWith(`${secretName}=`));
-    return name ? `${name}=<redacted>` : arg;
-  };
-  const commandLine = [command, ...args].map(redact).join(' ');
+export function redactSecrets(text: string, secrets: string[]): string {
+  return secrets.filter(Boolean).reduce((redacted, secret) => redacted.split(secret).join('<redacted>'), text);
+}
+
+export function formatCommandFailure(command: string, args: string[], result: CommandResult): string {
+  const commandLine = [command, ...args].join(' ');
   const details = [
     `Command failed: ${commandLine}`,
     result.status === null ? undefined : `Exit code: ${result.status}`,
@@ -88,11 +86,15 @@ export function requireRunningMoodleService(): void {
 }
 
 export function runMoodleCliScript(scriptPath: string, options: MoodleCliScriptOptions = {}): CommandResult {
-  const envArgs = Object.entries(options.env ?? {}).flatMap(([name, value]) => ['-e', `${name}=${value}`]);
+  const env = options.env ?? {};
+  // `-e NAME` without a value makes docker compose exec copy NAME from its own environment, so values
+  // (passwords included) stay out of argv, process listings and the failure message.
+  const envArgs = Object.keys(env).flatMap((name) => ['-e', name]);
+  const secrets = (options.secretEnvNames ?? []).map((name) => env[name]);
 
   return runCommand(
     'docker',
     ['compose', 'exec', '-T', '--user', moodleCliUser, ...envArgs, moodleServiceName, 'php', scriptPath],
-    { secretEnvNames: options.secretEnvNames }
+    { env, secrets }
   );
 }

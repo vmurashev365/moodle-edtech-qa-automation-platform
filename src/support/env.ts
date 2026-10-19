@@ -1,9 +1,8 @@
 import * as dotenv from 'dotenv';
+import { localDemoUserPassword } from './demo-credentials';
 import { resolveRuntimeProfile, type TraceMode, type VideoMode } from './runtime-profile';
 
 dotenv.config();
-
-const localDemoUserPassword = 'QaDemo2026!';
 
 export interface TestEnv {
   baseUrl: string;

@@ -1,6 +1,7 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { localDemoUserPassword } from '../src/support/demo-credentials';
 import { logger } from '../src/utils/logger';
 
 interface SeedArtifact {
@@ -48,7 +49,6 @@ interface EnvLine {
 const seedArtifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
 const envPath = path.resolve('.env');
 const envExamplePath = path.resolve('.env.example');
-const localDemoPassword = 'QaDemo2026!';
 
 const deterministicKeys = [
   'MOODLE_BASE_URL',
@@ -246,7 +246,7 @@ function applySeedEnv(): void {
       continue;
     }
 
-    const result = setEnvValue(lines, key, localDemoPassword);
+    const result = setEnvValue(lines, key, localDemoUserPassword);
 
     if (result.action !== 'unchanged') {
       changedKeys.push(key);
@@ -271,7 +271,7 @@ function applySeedEnv(): void {
 
   if (demoPasswordKeys.length > 0) {
     logger.warn(
-      `${demoPasswordKeys.join(', ')} were blank and were set to the documented local-only demo password "${localDemoPassword}".`
+      `${demoPasswordKeys.join(', ')} were blank and were set to the documented local-only demo password "${localDemoUserPassword}".`
     );
   }
 
