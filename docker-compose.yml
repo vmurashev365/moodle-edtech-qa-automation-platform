@@ -16,7 +16,8 @@ services:
       retries: 10
 
   moodle:
-    image: ${MOODLE_DOCKER_IMAGE:-bitnamilegacy/moodle:latest}
+    # Pinned by digest: Moodle 5.0.1 (Build: 20250609), version.php 2025041401.00.
+    image: ${MOODLE_DOCKER_IMAGE:-bitnamilegacy/moodle@sha256:a7bd6bf34b736dad22ee22168d4bfd830b7bedf9e34b89732d92d437317cb1d0}
     depends_on:
       mariadb:
         condition: service_healthy

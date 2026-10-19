@@ -224,7 +224,7 @@ npm run moodle:logs
 
 The Docker image may still require Moodle admin setup or Web Services enablement for later API work. The seed creates the controlled users, course, assignment, enrolments, deterministic online-text submission, and ungraded baseline needed for local grading validation.
 
-The default Docker images are configurable through `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`. They are intended for local controlled validation; pin or mirror approved images before relying on the stack long term.
+The default Docker images are configurable through `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`. The Moodle image is pinned by digest (`bitnamilegacy/moodle@sha256:a7bd6bf34b736dad22ee22168d4bfd830b7bedf9e34b89732d92d437317cb1d0`), which is Moodle 5.0.1 (Build: 20250609, `version.php` 2025041401.00); the suites were verified on it. An existing local `.env` that still sets `MOODLE_DOCKER_IMAGE=bitnamilegacy/moodle:latest` overrides the pin, so update it from `.env.example`. Change the digest deliberately and re-run the local suites when moving to another Moodle release.
 
 ## Static Validation
 

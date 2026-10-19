@@ -99,7 +99,7 @@ Planned:
 
 ## Controlled Moodle instance approach
 
-Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. Mount Orange Moodle demo is recon-only and must not be used as the CI target.
+Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. The local Docker stack pins the Moodle image by digest to Moodle 5.0.1 (Build: 20250609). Mount Orange Moodle demo is recon-only and must not be used as the CI target.
 
 The local Docker Compose file uses configurable Moodle and database image variables. The default images are intended for local portfolio validation only; pin or mirror approved images before treating the stack as long-lived infrastructure.
 
