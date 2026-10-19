@@ -45,15 +45,14 @@ When('the teacher opens assignment submissions for {string}', async function (as
   pendingImplementation('controlled Moodle selectors not verified yet for assignment submissions navigation.');
 });
 
-When('I open the submissions view', async function (this: MoodleWorld) {
+When('I open the controlled assignment from the course page', async function (this: MoodleWorld) {
   const assignmentPage = new AssignmentPage(this.requirePage());
-  await assignmentPage.openSubmissions(this.env);
+  await assignmentPage.openControlledAssignmentFromCoursePage(this.env);
 });
 
-When('I open the controlled assignment submissions page', async function (this: MoodleWorld) {
+When('I open the grading interface from the assignment page', async function (this: MoodleWorld) {
   const assignmentPage = new AssignmentPage(this.requirePage());
-  await assignmentPage.openSubmissions(this.env);
-  await assignmentPage.expectDeterministicSubmissionVisible(this.env);
+  await assignmentPage.openGradingInterfaceFromAssignmentPage();
 });
 
 When('I open the controlled assignment grading interface', async function (this: MoodleWorld) {

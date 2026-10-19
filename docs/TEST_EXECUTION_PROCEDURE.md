@@ -156,7 +156,8 @@ Before running the teacher workflow, create or confirm with `npm run moodle:seed
 - teacher enrolment in the controlled course
 - student enrolment in the controlled course
 - assignment `Essay: Test Automation Strategy`
-- deterministic student submission visible in the assignment submissions page
+- deterministic student submission visible in the single-user grading interface opened by the assignment's `Grade` action
+- Moodle user tours disabled by the seed, so the Phase 5 click path through Dashboard, My courses, course and assignment is not blocked by tour overlays
 
 Then run `npm run moodle:seed:env` so the generated course, assignment, submissions, gradebook, and display-name values are written to local `.env`.
 
@@ -165,7 +166,7 @@ Then run `npm run moodle:seed:env` so the generated course, assignment, submissi
 Before running the grading scenario as evidence, confirm:
 
 - Phase 5 controlled seed checklist is complete
-- deterministic `Student QA` submission appears in the assignment submissions page
+- deterministic `Student QA` submission appears in the single-user grading interface
 - `MOODLE_ASSIGNMENT_SUBMISSIONS_URL` or `MOODLE_ASSIGNMENT_ID`/`MOODLE_ASSIGNMENT_URL` is configured
 - `MOODLE_ASSIGNMENT_GRADING_URL` or enough assignment/student metadata to derive it is configured
 - `MOODLE_GRADEBOOK_URL`, `MOODLE_COURSE_ID`, or `MOODLE_COURSE_URL` is configured

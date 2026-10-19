@@ -54,7 +54,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 ## Phase 5 local teacher workflow
 
 - Controlled data readiness check: Ready with `npm run check:data`
-- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data and generated `.env` URLs
+- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data; navigates by clicks from Dashboard through My courses, course, assignment and `Grade` (no direct course or assignment URLs)
 - Login, dashboard/course, course/assignment, assignment-summary, Grade action, Student QA identity, and submission-status locator contracts: verified from local Mission 1-5 Recorder/Codegen evidence
 - Mission 6 extends the verified controls through grade input, save, and gradebook row checks
 - Seed evidence and public Allure report: TBD

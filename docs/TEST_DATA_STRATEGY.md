@@ -157,6 +157,7 @@ The seed runs inside the Docker Moodle container and uses Moodle internal APIs f
 - `Essay: Test Automation Strategy`
 - deterministic student submission
 - Student QA grade reset to Moodle's ungraded baseline through the assign grading API
+- Moodle user tours disabled, so first-visit overlays cannot block click navigation
 - teacher and student enrolments in the controlled course
 - generated local `.env` values for course, assignment, student ID, student email, submission ID, submissions URL, single-user grading URL, gradebook URL, student display name, and target grade
 

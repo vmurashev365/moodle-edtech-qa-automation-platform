@@ -33,7 +33,7 @@ export class CoursePage extends BasePage {
     ).toBeVisible();
   }
 
-  private async expectCourseContext(courseName: string): Promise<void> {
+  async expectCourseContext(courseName: string): Promise<void> {
     const courseHeading = this.page.getByRole('heading', { name: this.textMatcher(courseName) }).first();
 
     await uiExpect(courseHeading, `Expected controlled course page heading to show "${courseName}".`).toBeVisible();

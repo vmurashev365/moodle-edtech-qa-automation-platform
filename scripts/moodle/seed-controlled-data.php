@@ -97,6 +97,12 @@ try {
         $notes[] = 'Manual authentication was enabled for local controlled Moodle users.';
     }
 
+    $disabledtours = seed_disable_user_tours();
+
+    if ($disabledtours > 0) {
+        $notes[] = "Disabled {$disabledtours} Moodle user tour(s); their first-visit overlays block click navigation.";
+    }
+
     [$studentfirstname, $studentlastname] = seed_split_display_name($studentdisplayname);
 
     $teacher = seed_upsert_user(
@@ -219,6 +225,24 @@ function seed_ensure_manual_auth_enabled(): bool {
     $CFG->auth = $authsequence;
 
     return true;
+}
+
+// User tours open on a user's first visit to the dashboard, My courses, course and gradebook pages.
+// Whether a tour shows depends on per-user history, and its backdrop intercepts clicks, so the
+// controlled instance keeps them off.
+function seed_disable_user_tours(): int {
+    global $DB;
+
+    $disabled = 0;
+
+    foreach ($DB->get_records('tool_usertours_tours', ['enabled' => 1]) as $record) {
+        $tour = \tool_usertours\tour::load_from_record($record);
+        $tour->set_enabled(false);
+        $tour->persist();
+        $disabled++;
+    }
+
+    return $disabled;
 }
 
 function seed_upsert_user(string $username, string $firstname, string $lastname, string $email, string $password): stdClass {

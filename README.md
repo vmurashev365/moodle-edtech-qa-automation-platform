@@ -28,10 +28,12 @@ Phase 5 adds the first teacher-facing local workflow path:
 - verify the controlled Moodle instance is reachable
 - verify the local Phase 5 data contract is configured
 - log in as the configured teacher
-- open the controlled course
-- open the controlled assignment
-- open the submissions view
-- assert the deterministic student submission is visible
+- click from the Dashboard to My courses, then to the controlled course
+- click the controlled assignment on the course page
+- click the assignment's `Grade` action, which opens Moodle's single-user grading interface
+- assert Student QA's identity, the `Submitted for grading` and `Not graded` status, and the deterministic submission text
+
+Phase 5 navigates only by clicks, so it covers the real teacher path. Phase 6 opens the grading interface and gradebook by direct links from the seeded `.env`, so the two scenarios complement each other.
 
 Data setup now uses the local seed command below. Phase 6 adds the first real grading and gradebook reconciliation path for the same controlled assignment.
 
@@ -43,6 +45,7 @@ The deterministic local Moodle seed command:
 - uses Moodle internal APIs for users, course creation, manual enrolment, assignment creation/update, and online text submission setup
 - creates or updates `teacher.qa`, `student.qa`, `QA Automation Demo 101`, `Essay: Test Automation Strategy`, enrolments, and the deterministic student submission
 - resets the Student QA assignment grade to Moodle's ungraded baseline through the assign grading API before the UI grading scenario writes the target grade
+- disables Moodle user tours, whose first-visit overlays depend on per-user history and block clicks
 - writes generated course, assignment, student, submission, submissions, and gradebook IDs/URLs to a local seed artifact
 - applies generated IDs and URLs to the untracked local `.env` with `npm run moodle:seed:env`
 - writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`

@@ -33,10 +33,20 @@ export class AssignmentPage extends BasePage {
     await this.waitForReady();
   }
 
-  // Compatibility with existing Cucumber wording: the controlled one-submission assignment opens
-  // Moodle's single-user grading interface when the teacher chooses the verified Grade action.
-  async openSubmissions(env: TestEnv): Promise<void> {
-    await this.openGradingInterface(env);
+  async openControlledAssignmentFromCoursePage(env: TestEnv): Promise<void> {
+    await this.openAssignment(env.assignmentName);
+    await this.expectAssignmentContext(env.assignmentName);
+  }
+
+  // Mission 5: the assignment page's Grade action opens Moodle's single-user grading interface
+  // (action=grader) at the first participant; the controlled assignment has one student.
+  async openGradingInterfaceFromAssignmentPage(): Promise<void> {
+    const gradeAction = this.gradeAction();
+
+    await uiExpect(gradeAction, 'Expected the controlled assignment Grade action to be visible.').toBeVisible();
+    await gradeAction.click();
+    await this.waitForReady();
+    await this.expectUrlToContain('action=grader');
   }
 
   async openGradingInterface(env: TestEnv): Promise<void> {
@@ -45,11 +55,7 @@ export class AssignmentPage extends BasePage {
     if (gradingUrl) {
       await this.gotoUrl(gradingUrl);
     } else {
-      const gradeAction = this.gradeAction();
-
-      await uiExpect(gradeAction, 'Expected the controlled assignment Grade action to be visible.').toBeVisible();
-      await gradeAction.click();
-      await this.waitForReady();
+      await this.openGradingInterfaceFromAssignmentPage();
     }
 
     await this.expectUrlToContain('action=grader');

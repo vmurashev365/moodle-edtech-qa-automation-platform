@@ -8,6 +8,20 @@ export class TeacherDashboardPage extends BasePage {
     await this.waitForReady();
   }
 
+  // Moodle 5 lists enrolled courses on My courses, reached from the Dashboard's primary navigation.
+  async openMyCoursesFromDashboard(): Promise<void> {
+    await uiExpect(this.page, 'Expected the teacher to be on the Moodle Dashboard.').toHaveURL(
+      /\/my\/(?:index\.php)?(?:[?#].*)?$/
+    );
+
+    const myCoursesLink = this.myCoursesNavigationLink();
+
+    await uiExpect(myCoursesLink, 'Expected the My courses primary navigation link to be visible.').toBeVisible();
+    await myCoursesLink.click();
+    await this.waitForReady();
+    await this.expectUrlToContain('/my/courses.php');
+  }
+
   async expectCourseVisible(courseName: string): Promise<void> {
     const courseLink = this.controlledCourseLink(courseName);
 
@@ -20,6 +34,10 @@ export class TeacherDashboardPage extends BasePage {
     await uiExpect(courseLink, `Expected controlled course "${courseName}" link to be visible.`).toBeVisible();
     await courseLink.click();
     await this.waitForReady();
+  }
+
+  private myCoursesNavigationLink(): Locator {
+    return this.page.getByRole('menuitem', { name: /^My courses$/i }).first();
   }
 
   private controlledCourseLink(courseName: string): Locator {
