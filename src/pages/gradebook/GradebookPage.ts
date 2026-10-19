@@ -9,6 +9,7 @@ interface StudentGradeExpectation {
   studentDisplayName: string;
   studentEmail: string;
   assignmentName: string;
+  assignmentGradeItemId: string;
   targetGrade: number;
 }
 
@@ -41,6 +42,7 @@ export class GradebookPage extends BasePage {
       studentDisplayName: env.studentDisplayName,
       studentEmail: env.studentEmail,
       assignmentName: env.assignmentName,
+      assignmentGradeItemId: env.assignmentGradeItemId,
       targetGrade: env.targetGrade
     });
   }
@@ -76,6 +78,10 @@ export class GradebookPage extends BasePage {
       throw new Error('MOODLE_STUDENT_EMAIL is required for deterministic gradebook row validation.');
     }
 
+    if (!params.assignmentGradeItemId) {
+      throw new Error('MOODLE_ASSIGNMENT_GRADE_ITEM_ID is required for deterministic gradebook cell validation.');
+    }
+
     const studentRow = this.studentRow(params.studentId);
     const expectedGrade = this.formattedGrade(params.targetGrade);
 
@@ -89,7 +95,16 @@ export class GradebookPage extends BasePage {
     await uiExpect(studentRow, 'Expected gradebook row to show deterministic student email.').toContainText(
       params.studentEmail
     );
-    await uiExpect(studentRow, 'Expected gradebook row to show the saved target grade.').toContainText(expectedGrade);
+    await uiExpect(
+      this.gradeItemHeader(params.assignmentGradeItemId),
+      `Expected gradebook column for grade item ${params.assignmentGradeItemId} to be assignment "${params.assignmentName}".`
+    ).toContainText(params.assignmentName);
+    // toHaveText with a string is an exact match after whitespace normalization, so 182.00 or a
+    // matching Course total cannot satisfy it.
+    await uiExpect(
+      this.studentGradeCell(params.studentId, params.assignmentGradeItemId),
+      `Expected "${params.assignmentName}" grade cell for Moodle user ${params.studentId} to equal ${expectedGrade}.`
+    ).toHaveText(expectedGrade);
   }
 
   private skipTourButton(): Locator {
@@ -98,6 +113,16 @@ export class GradebookPage extends BasePage {
 
   private studentRow(studentId: string): Locator {
     return this.page.locator(`#fixed_user_${studentId}`).first();
+  }
+
+  // Moodle 5.0 grader report: the item column header and each grade cell carry data-itemid;
+  // the displayed grade sits in .gradevalue inside the cell.
+  private gradeItemHeader(gradeItemId: string): Locator {
+    return this.page.locator(`#user-grades th[data-itemid="${gradeItemId}"]`).first();
+  }
+
+  private studentGradeCell(studentId: string, gradeItemId: string): Locator {
+    return this.studentRow(studentId).locator(`td[data-itemid="${gradeItemId}"] .gradevalue`);
   }
 
   private formattedGrade(grade: number): string {

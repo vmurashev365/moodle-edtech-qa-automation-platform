@@ -123,6 +123,7 @@ try {
     $assignment = seed_upsert_assignment($course, $assignmentname);
     $assignment['submission'] = seed_ensure_online_text_submission($course, $assignment['cm'], $student, $submissiontext);
     $gradebaseline = qa_reset_grade_to_ungraded($course, $assignment['cm'], $student);
+    $gradeitem = seed_assignment_grade_item($course, $assignment['assign']);
 
     $courseurl = seed_build_url($baseurl, "/course/view.php?id={$course->id}");
     $assignmenturl = seed_build_url($baseurl, "/mod/assign/view.php?id={$assignment['cm']->id}");
@@ -170,12 +171,14 @@ try {
         ],
         'gradebook' => [
             'url' => $gradebookurl,
+            'gradeItemId' => (int) $gradeitem->id,
             'targetGrade' => $targetgrade,
             'baseline' => $gradebaseline,
         ],
         'envSnippet' => [
             'MOODLE_COURSE_ID' => (string) $course->id,
             'MOODLE_ASSIGNMENT_ID' => (string) $assignment['cm']->id,
+            'MOODLE_ASSIGNMENT_GRADE_ITEM_ID' => (string) $gradeitem->id,
             'MOODLE_STUDENT_ID' => (string) $student->id,
             'MOODLE_STUDENT_EMAIL' => $student->email,
             'MOODLE_SUBMISSION_ID' => (string) $assignment['submission']->id,
@@ -412,6 +415,22 @@ function seed_upsert_assignment(stdClass $course, string $assignmentname): array
         'cm' => $cm,
         'submission' => null,
     ];
+}
+
+function seed_assignment_grade_item(stdClass $course, stdClass $assign): grade_item {
+    $gradeitem = grade_item::fetch([
+        'courseid' => $course->id,
+        'itemtype' => 'mod',
+        'itemmodule' => 'assign',
+        'iteminstance' => $assign->id,
+        'itemnumber' => 0,
+    ]);
+
+    if (!$gradeitem) {
+        seed_fail("Could not find the gradebook item for assignment {$assign->name}.");
+    }
+
+    return $gradeitem;
 }
 
 function seed_add_module(stdClass $data, stdClass $course): stdClass {

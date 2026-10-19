@@ -66,7 +66,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Local grading readiness alias: Ready with `npm run check:local:grading-readiness`
 - Local grading command: `npm run test:local:grading` is guarded against zero-scenario false green results and selects one executable Phase 6 scenario when seeded data is ready
 - Current status: Implemented locally; proof requires `npm run moodle:seed:ready` followed by `npm run test:local:grading`
-- Verified UI behavior: teacher grades Student QA with `MOODLE_TARGET_GRADE`; gradebook row for `MOODLE_STUDENT_ID` shows Student QA, `student.qa@example.test`, assignment context, Course total context, and the formatted target grade
+- Verified UI behavior: teacher grades Student QA with `MOODLE_TARGET_GRADE`; gradebook row for `MOODLE_STUDENT_ID` shows Student QA and `student.qa@example.test`, and its assignment cell (grade item `MOODLE_ASSIGNMENT_GRADE_ITEM_ID`) equals the formatted target grade exactly; Course total is not accepted as proof
 - API status: API coverage remains preflight/helper-level; missing Moodle Web Service token warnings are non-blocking for this UI proof
 - Public Allure report/demo evidence: TBD
 

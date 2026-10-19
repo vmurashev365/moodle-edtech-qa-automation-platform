@@ -219,6 +219,10 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     errors.push('MOODLE_STUDENT_EMAIL is required before running Phase 6 gradebook row validation.');
   }
 
+  if (!hasValue(env.assignmentGradeItemId)) {
+    errors.push('MOODLE_ASSIGNMENT_GRADE_ITEM_ID is required before running Phase 6 gradebook cell validation.');
+  }
+
   if (!hasValue(env.apiToken)) {
     warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
   }
@@ -233,6 +237,7 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
       assignmentGradingNavigationReady: Boolean(gradingUrl),
       gradebookNavigationReady: Boolean(gradebookUrl),
       studentEmailConfigured: Boolean(env.studentEmail),
+      assignmentGradeItemConfigured: Boolean(env.assignmentGradeItemId),
       targetGrade: env.targetGrade
     }
   };

@@ -42,6 +42,7 @@ interface SeedOutput {
   };
   gradebook: {
     url: string;
+    gradeItemId: number;
     targetGrade: number;
     baseline: {
       mode: string;
@@ -110,6 +111,7 @@ function printSummary(seedOutput: SeedOutput): void {
   logger.info(`Submissions URL: ${seedOutput.assignment.submissionsUrl}`);
   logger.info(`Assignment grading URL: ${seedOutput.assignment.gradingUrl}`);
   logger.info(`Gradebook URL: ${seedOutput.gradebook.url}`);
+  logger.info(`Assignment grade item ID: ${seedOutput.gradebook.gradeItemId}`);
   logger.info(`Seeded grade baseline: ${seedOutput.gradebook.baseline.expectedBeforeUiGrade}`);
   logger.info(`Target grade: ${seedOutput.gradebook.targetGrade}`);
   logger.info(`Generated Moodle metadata has been written to: ${artifactPath}`);

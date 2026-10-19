@@ -33,6 +33,7 @@ interface SeedArtifact {
   };
   gradebook?: {
     url?: string;
+    gradeItemId?: number | string;
     targetGrade?: number | string;
   };
   envSnippet?: Record<string, string>;
@@ -59,6 +60,7 @@ const deterministicKeys = [
   'MOODLE_COURSE_URL',
   'MOODLE_ASSIGNMENT_NAME',
   'MOODLE_ASSIGNMENT_ID',
+  'MOODLE_ASSIGNMENT_GRADE_ITEM_ID',
   'MOODLE_STUDENT_ID',
   'MOODLE_STUDENT_EMAIL',
   'MOODLE_SUBMISSION_ID',
@@ -129,6 +131,7 @@ function requireValue(seed: SeedArtifact, key: string): string {
     MOODLE_COURSE_URL: seed.course?.url,
     MOODLE_ASSIGNMENT_NAME: seed.assignment?.name,
     MOODLE_ASSIGNMENT_ID: seed.assignment?.cmid,
+    MOODLE_ASSIGNMENT_GRADE_ITEM_ID: seed.gradebook?.gradeItemId,
     MOODLE_STUDENT_ID: seed.users?.student?.id,
     MOODLE_STUDENT_EMAIL: seed.users?.student?.email,
     MOODLE_SUBMISSION_ID: seed.submission?.id,

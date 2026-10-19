@@ -23,6 +23,7 @@ export interface TestEnv {
   targetGrade: number;
   courseId: string;
   assignmentId: string;
+  assignmentGradeItemId: string;
   studentId: string;
   submissionId: string;
   courseUrl: string;
@@ -92,6 +93,7 @@ export function loadEnv(): TestEnv {
     targetGrade: readNumber('MOODLE_TARGET_GRADE', 82),
     courseId: readEnv('MOODLE_COURSE_ID', ''),
     assignmentId: readEnv('MOODLE_ASSIGNMENT_ID', ''),
+    assignmentGradeItemId: readEnv('MOODLE_ASSIGNMENT_GRADE_ITEM_ID', ''),
     studentId: readEnv('MOODLE_STUDENT_ID', ''),
     submissionId: readEnv('MOODLE_SUBMISSION_ID', ''),
     courseUrl: readEnv('MOODLE_COURSE_URL', ''),
