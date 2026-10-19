@@ -1,14 +1,6 @@
-import { spawnSync } from 'node:child_process';
-
 import { loadEnv } from '../src/support/env';
+import { runMoodleCliScript } from '../src/support/moodle-cli';
 import { logger } from '../src/utils/logger';
-
-interface CommandResult {
-  status: number | null;
-  stdout: string;
-  stderr: string;
-  error?: Error;
-}
 
 interface AuthCheckOutput {
   ok?: boolean;
@@ -18,45 +10,7 @@ interface AuthCheckOutput {
   auth?: string;
 }
 
-const moodleServiceName = 'moodle';
 const authScriptPath = '/qa-seed/check-seeded-auth.php';
-
-function runCommand(command: string, args: string[], options: { allowFailure?: boolean } = {}): CommandResult {
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    windowsHide: true
-  });
-
-  const commandResult: CommandResult = {
-    status: result.status,
-    stdout: result.stdout ?? '',
-    stderr: result.stderr ?? '',
-    error: result.error
-  };
-
-  if (!options.allowFailure && (result.error || result.status !== 0)) {
-    throw new Error(formatCommandFailure(command, args, commandResult));
-  }
-
-  return commandResult;
-}
-
-function formatCommandFailure(command: string, args: string[], result: CommandResult): string {
-  const commandLine = [command, ...args].map(redactCommandArg).join(' ');
-  const details = [
-    `Command failed: ${commandLine}`,
-    result.status === null ? undefined : `Exit code: ${result.status}`,
-    result.error ? `Error: ${result.error.message}` : undefined,
-    result.stderr.trim() ? `stderr: ${result.stderr.trim()}` : undefined,
-    result.stdout.trim() ? `stdout: ${result.stdout.trim()}` : undefined
-  ].filter(Boolean);
-
-  return details.join('\n');
-}
-
-function redactCommandArg(value: string): string {
-  return value.startsWith('MOODLE_AUTH_PASSWORD=') ? 'MOODLE_AUTH_PASSWORD=<redacted>' : value;
-}
 
 function parseAuthOutput(stdout: string): AuthCheckOutput {
   try {
@@ -81,22 +35,14 @@ function checkUser(label: 'teacher' | 'student', username: string, password: str
     throw new Error(`MOODLE_${label.toUpperCase()}_PASSWORD is required for seeded auth check.`);
   }
 
-  const args = [
-    'compose',
-    'exec',
-    '-T',
-    '-e',
-    `MOODLE_AUTH_USERNAME=${username}`,
-    '-e',
-    `MOODLE_AUTH_PASSWORD=${password}`,
-    '-e',
-    `MOODLE_AUTH_LABEL=${label}`,
-    moodleServiceName,
-    'php',
-    authScriptPath
-  ];
-
-  const result = runCommand('docker', args);
+  const result = runMoodleCliScript(authScriptPath, {
+    env: {
+      MOODLE_AUTH_USERNAME: username,
+      MOODLE_AUTH_PASSWORD: password,
+      MOODLE_AUTH_LABEL: label
+    },
+    secretEnvNames: ['MOODLE_AUTH_PASSWORD']
+  });
   const output = parseAuthOutput(result.stdout);
 
   if (!output.ok) {
