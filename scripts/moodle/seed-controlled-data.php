@@ -78,7 +78,14 @@ $studentdisplayname = seed_env('MOODLE_STUDENT_DISPLAY_NAME', 'Student QA');
 $studentemail = seed_env('MOODLE_STUDENT_EMAIL', 'student.qa@example.test');
 $coursename = seed_env('MOODLE_COURSE_NAME', 'QA Automation Demo 101');
 $assignmentname = seed_env('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy');
-$targetgrade = (int) seed_env('MOODLE_TARGET_GRADE', '82');
+$rawtargetgrade = seed_env('MOODLE_TARGET_GRADE', '82');
+
+// Matches the TypeScript contract: whole-number grades within the assignment's maximum grade of 100.
+if (!preg_match('/^(100|[1-9]?[0-9])$/', $rawtargetgrade)) {
+    seed_fail("MOODLE_TARGET_GRADE must be an integer from 0 to 100; received \"{$rawtargetgrade}\".");
+}
+
+$targetgrade = (int) $rawtargetgrade;
 $courseshortname = 'QA101';
 $courseidnumber = 'qa-automation-demo-101';
 $submissiontext = 'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';

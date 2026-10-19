@@ -207,10 +207,6 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     );
   }
 
-  if (!Number.isFinite(env.targetGrade)) {
-    errors.push('MOODLE_TARGET_GRADE must be numeric before running Phase 6 grading.');
-  }
-
   if (!hasValue(env.studentId)) {
     errors.push('MOODLE_STUDENT_ID is required before running Phase 6 gradebook row validation.');
   }

@@ -1,5 +1,6 @@
 import * as dotenv from 'dotenv';
 import { localDemoUserPassword } from './demo-credentials';
+import { readIntegerEnv } from './env-values';
 import { resolveRuntimeProfile, type TraceMode, type VideoMode } from './runtime-profile';
 
 dotenv.config();
@@ -60,16 +61,8 @@ function readSeededUserPassword(name: string): string {
   return value === 'changeme' ? localDemoUserPassword : value;
 }
 
-function readNumber(name: string, fallback: number): number {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    return fallback;
-  }
-
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-}
+// The seed creates the controlled assignment with a maximum grade of 100 and whole-number grades.
+export const targetGradeRange = { min: 0, max: 100 };
 
 export function loadEnv(): TestEnv {
   const runtimeProfile = resolveRuntimeProfile();
@@ -89,7 +82,7 @@ export function loadEnv(): TestEnv {
     courseName: readEnv('MOODLE_COURSE_NAME', 'QA Automation Demo 101'),
     assignmentName: readEnv('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy'),
     audioResourceName: readEnv('MOODLE_AUDIO_RESOURCE_NAME', 'Sample Listening Task'),
-    targetGrade: readNumber('MOODLE_TARGET_GRADE', 82),
+    targetGrade: readIntegerEnv(process.env, 'MOODLE_TARGET_GRADE', targetGradeRange) ?? 82,
     courseId: readEnv('MOODLE_COURSE_ID', ''),
     assignmentId: readEnv('MOODLE_ASSIGNMENT_ID', ''),
     assignmentGradeItemId: readEnv('MOODLE_ASSIGNMENT_GRADE_ITEM_ID', ''),
@@ -101,7 +94,7 @@ export function loadEnv(): TestEnv {
     assignmentGradingUrl: readEnv('MOODLE_ASSIGNMENT_GRADING_URL', ''),
     gradebookUrl: readEnv('MOODLE_GRADEBOOK_URL', ''),
     studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
-    readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
+    readyTimeoutMs: readIntegerEnv(process.env, 'MOODLE_READY_TIMEOUT_MS', { min: 1 }) ?? 180000,
     executionProfile: runtimeProfile.name,
     headless: runtimeProfile.headless,
     slowMoMs: runtimeProfile.slowMoMs,
@@ -139,10 +132,6 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
 
   if (!env.audioResourceName) {
     warnings.push('MOODLE_AUDIO_RESOURCE_NAME is empty; media smoke scenarios will remain blocked.');
-  }
-
-  if (!Number.isFinite(env.targetGrade)) {
-    errors.push('MOODLE_TARGET_GRADE must be numeric.');
   }
 
   if (!env.apiToken) {
