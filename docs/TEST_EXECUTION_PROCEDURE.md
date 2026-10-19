@@ -311,13 +311,13 @@ npm run test:media
 npm run test:all
 ```
 
-The commands above exclude `@wip`. Suites that still target planned security, media, or broader UI coverage may select no executable scenarios until their Moodle selectors and API helpers are implemented.
+The commands above exclude `@wip`. Every executable suite command (`test:*`, including the `local`, `demo` and `fast` variants) goes through a scenario guard (`scripts/lib/scenario-guard.ts`) that counts the selected scenarios with the Cucumber API before the run and exits non-zero when none are selected. When every matching scenario is tagged `@wip`, the error says so; today `test:security` and `test:media` fail this way until their scenarios are implemented. `test:wip` is the only unguarded command.
 
 `test:local:smoke` requires the local controlled Moodle instance to be running and reachable. It does not require teacher/student/course/assignment provisioning.
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
 
-`test:local:grading` is local-only and guarded against false green results. It runs the grading data check, then fails intentionally if Cucumber selects zero executable Phase 6 scenarios. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading plus gradebook row verification path.
+`test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading plus gradebook row verification path.
 
 ## Failure Evidence
 

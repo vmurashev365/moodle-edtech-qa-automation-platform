@@ -183,7 +183,7 @@ npm run test:local:grading
 npm run moodle:stop
 ```
 
-`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only and guarded against selecting zero scenarios.
+`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only. Every executable `test:*` command except `test:wip` fails when it selects zero scenarios, and says so when all matching scenarios are tagged `@wip`.
 
 ## Demo and fast execution profiles
 

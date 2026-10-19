@@ -1,20 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import * as dotenv from 'dotenv';
 
 import { resolveRuntimeProfile, type RuntimeProfile } from '../src/support/runtime-profile';
 import { logger } from '../src/utils/logger';
-
-interface CucumberJsonElement {
-  type?: string;
-  keyword?: string;
-}
-
-interface CucumberJsonFeature {
-  elements?: CucumberJsonElement[];
-}
+import { emptySelectionMessage, inspectScenarioSelection } from './lib/scenario-guard';
 
 interface ParsedArgs {
   executionProfile: 'demo' | 'fast';
@@ -79,32 +71,6 @@ function hasCucumberProfile(args: string[]): boolean {
   return args.includes('--profile') || args.some((arg) => arg.startsWith('--profile='));
 }
 
-function safeFileName(name: string): string {
-  return (
-    name
-      .replace(/[^a-z0-9]+/gi, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase() || 'cucumber-selection'
-  );
-}
-
-function countSelectedScenarios(reportPath: string): number {
-  if (!existsSync(reportPath)) {
-    return 0;
-  }
-
-  const payload = JSON.parse(readFileSync(reportPath, 'utf8')) as CucumberJsonFeature[];
-
-  if (!Array.isArray(payload)) {
-    return 0;
-  }
-
-  return payload.reduce((count, feature) => {
-    const elements = Array.isArray(feature.elements) ? feature.elements : [];
-    return count + elements.filter((element) => element.type === 'scenario' || element.keyword === 'Scenario').length;
-  }, 0);
-}
-
 function clean(value: string | undefined): string | undefined {
   const cleaned = value?.trim();
   return cleaned ? cleaned : undefined;
@@ -159,25 +125,20 @@ function writeRuntimeProfileSnapshot(profile: RuntimeProfile): void {
   writeFileSync(path.join(resultsDir, 'runtime-profile.json'), JSON.stringify(payload, null, 2));
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
   const cucumberBin = path.resolve('node_modules', '@cucumber', 'cucumber', 'bin', 'cucumber-js');
-  const reportDirectory = path.resolve('reports', 'cucumber');
   const cucumberArgs = [...parsed.cucumberArgs];
+  const guardLabel = parsed.guardLabel ?? `${parsed.executionProfile} run`;
+  const selection = await inspectScenarioSelection(cucumberArgs);
 
-  mkdirSync(reportDirectory, { recursive: true });
-
-  let guardReportPath: string | undefined;
-
-  if (parsed.guardLabel) {
-    const guardReportRelativePath = path.posix.join(
-      'reports',
-      'cucumber',
-      `${safeFileName(parsed.guardLabel)}-guard-report.json`
-    );
-    guardReportPath = path.resolve(guardReportRelativePath);
-    cucumberArgs.push('--format', `json:${guardReportRelativePath}`);
+  if (selection.selected === 0) {
+    logger.error(emptySelectionMessage(guardLabel, selection));
+    process.exitCode = 1;
+    return;
   }
+
+  logger.info(`${guardLabel} selected ${selection.selected} executable Cucumber scenario(s).`);
 
   // Load .env without overriding the outer environment, exactly as the Cucumber child process will,
   // so the snapshot describes the profile the browser actually runs with.
@@ -203,26 +164,10 @@ function main(): void {
     throw result.error;
   }
 
-  if (guardReportPath) {
-    const selectedScenarioCount = countSelectedScenarios(guardReportPath);
-
-    if (selectedScenarioCount === 0 && result.status === 0) {
-      logger.error(
-        `${parsed.guardLabel} selected 0 executable Cucumber scenarios. Failing intentionally to prevent a false-green command.`
-      );
-      process.exitCode = 1;
-      return;
-    }
-
-    logger.info(`${parsed.guardLabel} selected ${selectedScenarioCount} executable Cucumber scenario(s).`);
-  }
-
   process.exitCode = result.status ?? 1;
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error: unknown) => {
   logger.error((error as Error).message);
   process.exitCode = 1;
-}
+});
