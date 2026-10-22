@@ -67,6 +67,15 @@ try {
     reset_fail($error->getMessage());
 }
 
+if ($state['gradebookState'] === 'regrade-error') {
+    $details = $state['regradeErrors'] ? implode('; ', $state['regradeErrors']) : 'Moodle reported no details';
+    reset_fail("the gradebook regrade failed, so the gradebook grade could not be read: {$details}");
+}
+
+if ($state['gradebookState'] === 'missing') {
+    reset_fail("no gradebook item exists for assignment cmid {$cmid}. Run npm run moodle:seed:ready.");
+}
+
 if (!$state['ungraded']) {
     reset_fail(
         'grade is still set after reset: ' . json_encode($state, JSON_UNESCAPED_SLASHES)
@@ -79,6 +88,7 @@ echo json_encode(
         'cmid' => $cmid,
         'studentId' => $studentid,
         'assignGrade' => $state['assignGrade'],
+        'gradebookState' => $state['gradebookState'],
         'gradebookGrade' => $state['gradebookGrade'],
         'status' => 'notgraded',
     ],

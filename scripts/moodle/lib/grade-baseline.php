@@ -50,12 +50,37 @@ function qa_read_grade_state(stdClass $course, stdClass $cm, stdClass $student):
     $assigngrade = ($grade && $grade->grade !== null) ? (float) $grade->grade : null;
 
     $gradinginfo = grade_get_grades((int) $course->id, 'mod', 'assign', (int) $cm->instance, (int) $student->id);
-    $gradebookgrade = $gradinginfo->items[0]->grades[(int) $student->id]->grade ?? null;
-    $gradebookgrade = $gradebookgrade === null ? null : (float) $gradebookgrade;
+    // Items are keyed by itemnumber; grade_get_grades() includes every requested user once the item exists.
+    $usergrade = $gradinginfo->items[0]->grades[(int) $student->id] ?? null;
+    $gradebookgrade = null;
+
+    if ($usergrade === null) {
+        $gradebookstate = 'missing';
+    } else if ($usergrade->grade === false) {
+        // A failed gradebook regrade is reported as grade === false, which a float cast would turn into 0.
+        $gradebookstate = 'regrade-error';
+    } else if ($usergrade->grade === null) {
+        $gradebookstate = 'ungraded';
+    } else {
+        $gradebookstate = 'graded';
+        $gradebookgrade = (float) $usergrade->grade;
+    }
 
     return [
         'assignGrade' => $assigngrade,
+        'gradebookState' => $gradebookstate,
         'gradebookGrade' => $gradebookgrade,
-        'ungraded' => ($assigngrade === null || $assigngrade < 0) && $gradebookgrade === null,
+        'regradeErrors' => qa_format_regrade_errors($gradinginfo->errors ?? []),
+        'ungraded' => ($assigngrade === null || $assigngrade < 0) && $gradebookstate === 'ungraded',
     ];
+}
+
+function qa_format_regrade_errors(array $errors): array {
+    $messages = [];
+
+    foreach ($errors as $itemid => $error) {
+        $messages[] = "grade item {$itemid}: " . (is_scalar($error) ? (string) $error : json_encode($error));
+    }
+
+    return $messages;
 }

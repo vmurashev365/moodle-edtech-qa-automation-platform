@@ -9,6 +9,7 @@ export interface UngradedBaselineResult {
   cmid: number;
   studentId: number;
   assignGrade: number | null;
+  gradebookState: 'ungraded' | 'graded' | 'regrade-error' | 'missing';
   gradebookGrade: number | null;
   status: string;
 }
@@ -52,7 +53,12 @@ export function resetUngradedBaseline(env: TestEnv): UngradedBaselineResult {
     throw new Error(`Ungraded baseline reset did not return JSON. Raw stdout: ${stdout.trim() || '<empty>'}`);
   }
 
-  if (!result.ok || result.status !== 'notgraded' || result.gradebookGrade !== null) {
+  if (
+    !result.ok ||
+    result.status !== 'notgraded' ||
+    result.gradebookState !== 'ungraded' ||
+    result.gradebookGrade !== null
+  ) {
     throw new Error(`Ungraded baseline reset did not leave the student ungraded: ${JSON.stringify(result)}`);
   }
 
