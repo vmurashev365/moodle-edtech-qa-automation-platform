@@ -25,9 +25,11 @@ export class LoginPage extends BasePage {
   async login(username: string, password: string): Promise<void> {
     await this.open();
     await this.expectLoginFormVisible();
+    await this.waitForPasswordToggleIfEnabled();
 
     await this.fillVisibleField(this.usernameField(), username, 'Moodle login username field');
     await this.fillVisibleField(this.passwordField(), password, 'Moodle login password field');
+    await this.expectPasswordFieldKeepsValue(password);
     await this.clickVisibleAction(this.submitAction(), 'Moodle login submit action');
     await this.waitForReady();
     await this.expectAuthenticated();
@@ -52,6 +54,33 @@ export class LoginPage extends BasePage {
           : 'Moodle login did not reach an authenticated dashboard or user menu.'
       );
     }
+  }
+
+  // When the loginpasswordtoggle admin setting is on, Moodle's core/togglesensitive module re-renders
+  // #password from its outerHTML after page load. A password typed before that swap is silently dropped
+  // and the form posts an empty password, so wait for the swap whenever the page initialises the module.
+  private async waitForPasswordToggleIfEnabled(): Promise<void> {
+    const toggleInitialised = await this.page.evaluate(() =>
+      Array.from(document.scripts).some((script) => script.text.includes('core/togglesensitive'))
+    );
+
+    if (!toggleInitialised) {
+      return;
+    }
+
+    await uiExpect(
+      this.page.locator(authLegacySelectors.loginPage.passwordToggleWrappedField),
+      'Expected Moodle password visibility toggle to finish replacing the password field before typing.'
+    ).toBeAttached();
+  }
+
+  // Compares inside the poll instead of using toHaveValue, whose failure message would print the password.
+  private async expectPasswordFieldKeepsValue(password: string): Promise<void> {
+    await uiExpect
+      .poll(async () => (await this.passwordField().inputValue()) === password, {
+        message: 'Expected the Moodle password field to keep the typed password until the form is submitted.'
+      })
+      .toBe(true);
   }
 
   private credentialsFor(

@@ -6,7 +6,9 @@ export const authLegacySelectors = {
     passwordField: 'input[name="password"]',
     submitAction: '#loginbtn',
     loginForm: 'form#login, form[action*="/login/index.php"]',
-    loginError: '#loginerrormessage, .loginerrors, .alert-danger'
+    loginError: '#loginerrormessage, .loginerrors, .alert-danger',
+    // core/togglesensitive wraps the password input in this container once it has replaced it.
+    passwordToggleWrappedField: '.toggle-sensitive-wrapper #password'
   },
   authenticatedPage: {
     userMenu: '#user-menu-toggle, [data-region="usermenu"], .usermenu',
