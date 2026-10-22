@@ -5,28 +5,37 @@ export interface CommandResult {
   stdout: string;
   stderr: string;
   error?: Error;
+  timedOutAfterMs?: number;
 }
 
 export interface MoodleCliScriptOptions {
   env?: Record<string, string>;
   secretEnvNames?: string[];
+  timeoutMs?: number;
 }
 
 interface RunCommandOptions {
   allowFailure?: boolean;
   env?: Record<string, string>;
   secrets?: string[];
+  timeoutMs?: number;
 }
 
 export const moodleServiceName = 'moodle';
 // Bitnami Moodle serves PHP as `daemon`. CLI scripts must run as the same user; running them as root
 // leaves root-owned moodledata/temp directories that later break web requests with permission errors.
 export const moodleCliUser = 'daemon';
+// spawnSync blocks the event loop, so Cucumber's step and hook timeouts cannot interrupt a hung docker
+// call. Every command therefore carries its own limit. Killing the docker client on timeout does not
+// stop a PHP process that is already running inside the container.
+export const defaultCommandTimeoutMs = 120_000;
 
 export function runCommand(command: string, args: string[], options: RunCommandOptions = {}): CommandResult {
+  const timeoutMs = options.timeoutMs ?? defaultCommandTimeoutMs;
   const result = spawnSync(command, args, {
     encoding: 'utf8',
     env: options.env ? { ...process.env, ...options.env } : process.env,
+    timeout: timeoutMs,
     windowsHide: true
   });
 
@@ -34,7 +43,8 @@ export function runCommand(command: string, args: string[], options: RunCommandO
     status: result.status,
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
-    error: result.error
+    error: result.error,
+    timedOutAfterMs: result.error && 'code' in result.error && result.error.code === 'ETIMEDOUT' ? timeoutMs : undefined
   };
 
   if (!options.allowFailure && (result.error || result.status !== 0)) {
@@ -52,6 +62,7 @@ export function formatCommandFailure(command: string, args: string[], result: Co
   const commandLine = [command, ...args].join(' ');
   const details = [
     `Command failed: ${commandLine}`,
+    result.timedOutAfterMs === undefined ? undefined : `Timed out after ${result.timedOutAfterMs} ms`,
     result.status === null ? undefined : `Exit code: ${result.status}`,
     result.error ? `Error: ${result.error.message}` : undefined,
     result.stderr.trim() ? `stderr: ${result.stderr.trim()}` : undefined,
@@ -95,6 +106,6 @@ export function runMoodleCliScript(scriptPath: string, options: MoodleCliScriptO
   return runCommand(
     'docker',
     ['compose', 'exec', '-T', '--user', moodleCliUser, ...envArgs, moodleServiceName, 'php', scriptPath],
-    { env, secrets }
+    { env, secrets, timeoutMs: options.timeoutMs }
   );
 }

@@ -14,6 +14,8 @@ export interface UngradedBaselineResult {
 }
 
 const resetScriptPath = '/qa-seed/reset-ungraded-baseline.php';
+// Below Cucumber's 30 s hook timeout, which cannot fire while the synchronous docker call blocks.
+const resetTimeoutMs = 20_000;
 
 export function resetUngradedBaseline(env: TestEnv): UngradedBaselineResult {
   if (!env.assignmentId || !env.studentId) {
@@ -29,7 +31,8 @@ export function resetUngradedBaseline(env: TestEnv): UngradedBaselineResult {
       env: {
         MOODLE_ASSIGNMENT_ID: env.assignmentId,
         MOODLE_STUDENT_ID: env.studentId
-      }
+      },
+      timeoutMs: resetTimeoutMs
     }).stdout;
   } catch (error) {
     throw new Error(

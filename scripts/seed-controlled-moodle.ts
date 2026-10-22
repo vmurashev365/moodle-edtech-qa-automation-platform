@@ -57,6 +57,7 @@ interface SeedOutput {
 
 const seedScriptPath = '/qa-seed/seed-controlled-data.php';
 const artifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
+const seedTimeoutMs = 300_000;
 
 function buildSeedEnv(): Record<string, string> {
   const env = loadEnv();
@@ -138,7 +139,9 @@ function printSummary(seedOutput: SeedOutput): void {
 function runSeed(): SeedOutput {
   const result = runMoodleCliScript(seedScriptPath, {
     env: buildSeedEnv(),
-    secretEnvNames: ['MOODLE_TEACHER_PASSWORD', 'MOODLE_STUDENT_PASSWORD']
+    secretEnvNames: ['MOODLE_TEACHER_PASSWORD', 'MOODLE_STUDENT_PASSWORD'],
+    // The first seed on a fresh stack also warms Moodle caches and builds the course.
+    timeoutMs: seedTimeoutMs
   });
 
   if (result.stderr.trim()) {
