@@ -6,6 +6,7 @@ export type GradebookState = 'ungraded' | 'graded' | 'regrade-error' | 'missing'
 export interface GradeStateResult {
   ok: boolean;
   cmid: number;
+  assignmentInstanceId: number;
   studentId: number;
   assignGrade: number | null;
   gradebookState: GradebookState;
@@ -56,6 +57,8 @@ export function readGradeState(env: TestEnv): GradeStateResult {
 
   if (
     result.ok !== true ||
+    !Number.isInteger(result.assignmentInstanceId) ||
+    result.assignmentInstanceId <= 0 ||
     !isNumberOrNull(result.assignGrade) ||
     !isNumberOrNull(result.gradebookGrade) ||
     !gradebookStates.includes(result.gradebookState) ||
@@ -77,19 +80,7 @@ export function expectStoredGrade(state: GradeStateResult, expectedGrade: number
     );
   }
 
-  if (state.gradebookState === 'regrade-error') {
-    const details = state.regradeErrors.length ? state.regradeErrors.join('; ') : 'Moodle reported no details';
-    throw new Error(
-      `The Moodle gradebook regrade failed, so the gradebook grade for ${student} could not be read: ${details}`
-    );
-  }
-
-  if (state.gradebookState === 'missing') {
-    throw new Error(
-      `No gradebook grade item exists for assignment cmid ${state.cmid}, so the gradebook holds no grade for ${student}. ` +
-        'Run npm run moodle:seed:ready.'
-    );
-  }
+  expectGradebookReadable(state);
 
   if (state.gradebookState !== 'graded') {
     throw new Error(
@@ -101,6 +92,58 @@ export function expectStoredGrade(state: GradeStateResult, expectedGrade: number
     throw new Error(
       `Expected the gradebook grade stored for ${student} to be ${expectedGrade}, ` +
         `but Moodle stores ${formatGrade(state.gradebookGrade)}.`
+    );
+  }
+}
+
+export function expectNotGraded(state: GradeStateResult): void {
+  const student = `Moodle user ${state.studentId}`;
+
+  // Moodle's assign API stores -1 (or no grade row) for "not graded".
+  if (state.assignGrade !== null && state.assignGrade >= 0) {
+    throw new Error(
+      `Expected no assignment grade for ${student} (assignment cmid ${state.cmid}), ` +
+        `but Moodle stores ${formatGrade(state.assignGrade)}.`
+    );
+  }
+
+  expectGradebookReadable(state);
+
+  if (state.gradebookState !== 'ungraded' || state.gradebookGrade !== null) {
+    throw new Error(
+      `Expected the gradebook to hold no grade for ${student}, but its state is "${state.gradebookState}" ` +
+        `with grade ${formatGrade(state.gradebookGrade)}.`
+    );
+  }
+}
+
+export function expectGradeStateUnchanged(before: GradeStateResult, after: GradeStateResult): void {
+  const fields = ['assignGrade', 'gradebookState', 'gradebookGrade'] as const;
+  const changed = fields.filter((field) => before[field] !== after[field]);
+
+  if (changed.length > 0) {
+    throw new Error(
+      `Expected the stored grade of Moodle user ${after.studentId} to be unchanged, but ${changed
+        .map((field) => `${field} went from ${String(before[field])} to ${String(after[field])}`)
+        .join(', ')}.`
+    );
+  }
+}
+
+function expectGradebookReadable(state: GradeStateResult): void {
+  const student = `Moodle user ${state.studentId}`;
+
+  if (state.gradebookState === 'regrade-error') {
+    const details = state.regradeErrors.length ? state.regradeErrors.join('; ') : 'Moodle reported no details';
+    throw new Error(
+      `The Moodle gradebook regrade failed, so the gradebook grade for ${student} could not be read: ${details}`
+    );
+  }
+
+  if (state.gradebookState === 'missing') {
+    throw new Error(
+      `No gradebook grade item exists for assignment cmid ${state.cmid}, so the gradebook holds no grade for ${student}. ` +
+        'Run npm run moodle:seed:ready.'
     );
   }
 }

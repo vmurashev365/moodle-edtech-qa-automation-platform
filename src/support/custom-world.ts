@@ -4,8 +4,10 @@ import path from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { browserContextOptions, browserLaunchOptions } from '../../playwright.config';
 import { MoodleClient } from '../api/clients/MoodleClient';
+import type { GradingServiceResponse } from '../pages/assignment/AssignmentPage';
 import type { EnvValidationResult, TestEnv } from './env';
 import { loadEnv } from './env';
+import type { GradeStateResult } from './grade-state';
 import { resolveRuntimeProfile, type RuntimeProfile } from './runtime-profile';
 import { installClickVisualizer } from './screencast/click-visualizer';
 
@@ -15,6 +17,8 @@ export interface ApiPreflightState {
 
 export interface RoleAccessState {
   graderResponseStatus?: number;
+  gradeStateBefore?: GradeStateResult;
+  gradingServiceResponse?: GradingServiceResponse;
 }
 
 export class MoodleWorld extends World {

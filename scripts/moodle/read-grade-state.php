@@ -55,6 +55,7 @@ echo json_encode(
     [
         'ok' => true,
         'cmid' => $cmid,
+        'assignmentInstanceId' => (int) $cm->instance,
         'studentId' => $studentid,
         'assignGrade' => $state['assignGrade'],
         'gradebookState' => $state['gradebookState'],

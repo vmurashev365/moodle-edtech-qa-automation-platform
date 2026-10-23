@@ -76,6 +76,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 
 - Local command: `npm run test:local:security` is guarded against zero-scenario false green results
 - Verified UI behavior: Student QA, confirmed by the user menu, opens `action=grader&userid=<MOODLE_STUDENT_ID>` and gets Moodle's `error/nopermission` error (errorcode `nopermission`, HTTP 404). The capability check is `mod/assign:viewgrades` or `mod/assign:grade` (`assign::require_view_grades()`); the page does not name it. The page must not be the login page, and only after the error is visible may the `Grade out of` input and `Save changes` action be absent
+- Service-level attempt: from the student's page and with the student's session key, the request the grading panel sends on Save changes (`mod_assign_submit_grading_form`, assign instance id from the CLI) is refused with errorcode `nopermissions`, "Sorry, but you do not currently have permissions to do that (Grade assignment)." (`mod/assign:grade`, checked by `assign::save_grade()`). The identical request sent by the teacher saves the grade, and a wrong instance id or an invalid grade is reported as not a permission error. The CLI grade state before and after is attached and must be not graded and unchanged
 - Follow-ups: the submissions table (`action=grading`) and the gradebook grader report have no role-negative check yet
 - Public Allure report: TBD
 

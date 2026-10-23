@@ -74,7 +74,7 @@ Implemented:
 - Phase 5 submission-review foundation with controlled seed readiness checks
 - local controlled Moodle seed and safe `.env` sync commands
 - Phase 6 local teacher grading plus gradebook row verification and Moodle CLI backend reconciliation of the stored grade
-- Phase 7 local role-negative check: a signed-in student is refused Moodle's single-user grading interface
+- Phase 7 local role-negative check: a signed-in student is refused Moodle's single-user grading interface and its grading service, and the stored grade stays not graded (Moodle CLI check)
 - demo and fast execution profiles for local review and CI-safe runs
 - Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `MOODLE_TRACE_MODE=retain-on-failure`
 
@@ -219,7 +219,7 @@ npm run test:fast:api
 ```
 
 Demo videos are written under ignored `videos/`, traces under ignored `traces/`, screenshots under ignored `screenshots/`, and local reports under ignored `reports/`.
-Scenarios tagged `@ungraded-baseline` (Phase 5 and Phase 6) reset Student QA's grade to "not graded" in a Before hook through `scripts/moodle/reset-ungraded-baseline.php`, so they pass in any execution order and on repeated runs without re-seeding. The hook fails the scenario if Docker or the Moodle container is unavailable or the reset does not take effect.
+Scenarios tagged `@ungraded-baseline` (Phase 5, Phase 6 and the Phase 7 grading service scenario) reset Student QA's grade to "not graded" in a Before hook through `scripts/moodle/reset-ungraded-baseline.php`, so they pass in any execution order and on repeated runs without re-seeding. The hook fails the scenario if Docker or the Moodle container is unavailable or the reset does not take effect.
 The demo screencast commands force a headed local browser, use slower presentation pacing, record Playwright video with click target highlighting, regenerate the Allure HTML evidence package, and open the local Allure viewer automatically after the Cucumber run. GitHub Actions may still set `MOODLE_HEADLESS=true` for artifact-only screencast evidence. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer.
 
 Generate an Allure HTML evidence package while preserving the test exit code:

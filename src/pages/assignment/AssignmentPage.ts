@@ -11,6 +11,18 @@ const moodleSubmissionStatusPanelSelector = '.submissionstatustable';
 // Moodle's fatal error box (core_renderer::fatal_error), rendered when a page throws before any output.
 const moodleFatalErrorSelector = '[data-rel="fatalerror"]';
 
+export interface GradingServiceRequest {
+  cmid: number;
+  assignmentInstanceId: number;
+  userId: number;
+  grade: number;
+}
+
+export interface GradingServiceResponse {
+  httpStatus: number;
+  body: unknown;
+}
+
 export class AssignmentPage extends BasePage {
   async openControlledAssignment(env: TestEnv): Promise<void> {
     const assignmentUrl = resolveAssignmentUrl(env);
@@ -125,6 +137,62 @@ export class AssignmentPage extends BasePage {
   async expectNoGradingControls(): Promise<void> {
     await uiExpect(this.gradeInput(), 'Expected no Moodle "Grade out of" input.').toHaveCount(0);
     await uiExpect(this.saveChangesButton(), 'Expected no Moodle "Save changes" action.').toHaveCount(0);
+  }
+
+  // Sends, from the current page with the signed-in user's session key, the request the single-user grading panel
+  // sends on "Save changes" (mod/assign/amd/src/grading_panel.js): mod_assign_submit_grading_form through
+  // lib/ajax/service.php. assignmentid is the assign instance id, not the cmid; jsonformdata is the grade form,
+  // URL-encoded and then JSON-encoded, with the fields the panel serialises.
+  async submitGradeThroughGradingService(request: GradingServiceRequest): Promise<GradingServiceResponse> {
+    return this.page.evaluate(async ({ cmid, assignmentInstanceId, userId, grade }) => {
+      const moodleConfig = (window as unknown as { M?: { cfg?: { sesskey?: string; wwwroot?: string } } }).M?.cfg;
+
+      if (!moodleConfig?.sesskey || !moodleConfig.wwwroot) {
+        throw new Error('The current page exposes no Moodle session key (M.cfg.sesskey); sign in first.');
+      }
+
+      const formData = new URLSearchParams({
+        id: String(cmid),
+        rownum: '0',
+        useridlistid: '',
+        attemptnumber: '-1',
+        ajax: '0',
+        userid: '0',
+        sendstudentnotifications: 'false',
+        action: 'submitgrade',
+        sesskey: moodleConfig.sesskey,
+        [`_qf__mod_assign_grade_form_${userId}`]: '1',
+        grade: String(grade),
+        'assignfeedbackcomments_editor[text]': '',
+        'assignfeedbackcomments_editor[format]': '1',
+        'assignfeedbackcomments_editor[itemid]': '0'
+      }).toString();
+      const serviceUrl = new URL(`${moodleConfig.wwwroot.replace(/\/$/, '')}/lib/ajax/service.php`);
+      serviceUrl.searchParams.set('sesskey', moodleConfig.sesskey);
+      serviceUrl.searchParams.set('info', 'mod_assign_submit_grading_form');
+
+      const response = await fetch(serviceUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          {
+            index: 0,
+            methodname: 'mod_assign_submit_grading_form',
+            args: { assignmentid: assignmentInstanceId, userid: userId, jsonformdata: JSON.stringify(formData) }
+          }
+        ])
+      });
+      const text = await response.text();
+      let body: unknown;
+
+      try {
+        body = JSON.parse(text) as unknown;
+      } catch {
+        body = text;
+      }
+
+      return { httpStatus: response.status, body };
+    }, request);
   }
 
   async expectDeterministicSubmissionVisible(env: TestEnv): Promise<void> {

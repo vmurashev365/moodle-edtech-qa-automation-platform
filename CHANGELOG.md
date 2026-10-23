@@ -6,7 +6,7 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
 
 ### Tags
 
-- Added `@ungraded-baseline`. Scenarios with this tag get a Before hook that resets Student QA's assignment grade to "not graded" before the scenario starts. Applied to the Phase 5 and Phase 6 features.
+- Added `@ungraded-baseline`. Scenarios with this tag get a Before hook that resets Student QA's assignment grade to "not graded" before the scenario starts. Applied to the Phase 5 and Phase 6 features and to the Phase 7 grading service scenario.
 - Added `@phase7` for the role-access feature (`features/security/role-access.feature`), which also gains `@local` and loses `@wip`. Its `@smoke` scenario is now selected by `test:smoke`, `test:security` and `test:all`, which therefore need a seeded stack (`npm run moodle:seed:ready`). `test:fast:*`, `test:local:smoke` and `test:demo:smoke` select `@phase4` or `@api` only and are unchanged.
 - Added `npm run test:local:security` (guarded, `@phase7 and @local and not @wip`). The role-access feature is in the `demo` paths, so `test:demo:all` runs it.
 
@@ -27,8 +27,13 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
 - Implemented `the student attempts to open teacher-only grading for {string}`. The name must equal `MOODLE_ASSIGNMENT_NAME`; it opens the single-user grading URL (`action=grader&userid=<student>`) and records the HTTP status.
 - Implemented `access to teacher grading is denied`. In order: the page is not the login page and the user menu still belongs to the student; Moodle shows its `error/nopermission` error on the grading URL with HTTP 404; only then, no `Grade out of` input, no `Save changes` action and no login form.
 - `teacher {string} is signed in` is still pending.
+- Added `the student attempts to submit a grade for {string} through Moodle's grading service`. The name must equal `MOODLE_ASSIGNMENT_NAME`. It reads the grade state through the Moodle CLI and requires it to be not graded, then, from the student's page with the student's session key, sends the request the grading panel sends on Save changes (`mod_assign_submit_grading_form`, assign instance id, `MOODLE_TARGET_GRADE`).
+- Added `Moodle rejects the grade submission for lack of grading permission`. Requires errorcode `nopermissions` with the message for `mod/assign:grade` ("Grade assignment"). Acceptance, form-validation warnings (`couldnotsavegrade`) and other errorcodes fail with their own messages.
+- Added `the deterministic student grade is still not graded in Moodle`. Reads the grade state through the Moodle CLI again and requires it to be not graded and identical to the state before the attempt.
+- `scripts/moodle/read-grade-state.php` also reports `assignmentInstanceId`, which the grading service takes instead of the cmid.
 
 ### Features
 
 - Phase 5 scenario renamed from "Teacher opens assignment submissions from the controlled course" to "Teacher navigates from the dashboard to the deterministic submission ready for grading". It now clicks from the Dashboard instead of opening the course and assignment by URL. Phase 6 keeps direct links.
 - Role based access (`features/security/role-access.feature`) is implemented locally; the scenario "Student cannot access teacher-only grading workflow" keeps its wording.
+- Added the scenario "Student cannot submit a grade through Moodle's grading service" (`@ungraded-baseline`) to the role-access feature.
