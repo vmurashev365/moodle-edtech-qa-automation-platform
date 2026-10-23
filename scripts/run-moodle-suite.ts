@@ -238,7 +238,7 @@ function main(): void {
     logger.error(`Environment facts could not be collected: ${factsError}`);
   }
 
-  const reportStatus = runNpm(['run', 'report:allure']);
+  const reportStatus = runNpm(['run', 'report:allure', '--', '--single-file']);
 
   logger.info(`${suiteName}: ${results.filter((result) => result.passed).length} of ${iterations} iteration(s) passed`);
 

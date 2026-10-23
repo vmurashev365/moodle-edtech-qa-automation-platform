@@ -52,6 +52,8 @@
     "clean:allure": "ts-node scripts/clean-allure.ts",
     "report:allure": "ts-node scripts/report-allure.ts",
     "ci:moodle-suite": "ts-node scripts/run-moodle-suite.ts",
+    "evidence:package": "ts-node scripts/build-release-assets.ts",
+    "evidence:secret-guard": "ts-node scripts/check-evidence-secrets.ts",
     "report:allure:open": "allure open reports/allure-report",
     "clean:reports": "node -e \"const fs=require('fs'); for (const target of ['reports','test-results','allure-results','allure-report','screenshots','videos','traces']) fs.rmSync(target,{recursive:true,force:true});\"",
     "clean:artifacts": "node -e \"const fs=require('fs'); for (const target of ['artifacts','screenshots','videos','traces']) fs.rmSync(target,{recursive:true,force:true});\"",

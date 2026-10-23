@@ -14,6 +14,7 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
 
 - Added `npm run test:local:all` (guarded, `@local and not @wip` across all feature files, after the grading data check) and `npm run test:local:screencast:all` (the screencast run without the seed; `test:demo:screencast:all` now seeds and calls it).
 - Added `npm run ci:moodle-suite -- --suite <suite> --iterations <1-5>`, the command the Manual Moodle Test Run workflow runs. No tags or steps changed.
+- Added `npm run evidence:package` (release assets of a passed run), `npm run evidence:secret-guard` (refuses assets that contain a credential value) and `npm run report:allure -- --single-file` (offline single-file report with inlined branding).
 
 ### Steps
 

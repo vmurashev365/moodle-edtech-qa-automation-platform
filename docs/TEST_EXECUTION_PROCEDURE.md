@@ -374,7 +374,7 @@ Open the generated report:
 npm run report:allure:open
 ```
 
-The public Allure report link remains TBD until a real controlled Moodle run is published.
+Published controlled-Moodle reports are attached to evidence releases; see [Evidence releases](#evidence-releases). The release links remain TBD until real runs are published.
 
 ## Manual GitHub Actions Workflow
 
@@ -393,6 +393,7 @@ Inputs:
   - `local-all`: every implemented local scenario, headless, no screencast (`test:local:all`).
   - `local-demo-screencast-all`: the local scenarios with screencast video and click visualizer (`test:local:screencast:all`), headless in Actions.
 - `iterations` (1–5, default 1): how many times the suite runs on the same stack. Iteration 1 seeds with `npm run moodle:seed:ready` (local suites only); later iterations do not re-seed and rely on the `@ungraded-baseline` hooks. A seed failure stops the run and marks the remaining iterations as not run.
+- `publish_release` (default `false`): publish the evidence as a GitHub prerelease. See below.
 - `send_email`: see below.
 
 The run step calls the same command you can run locally against a running stack:
@@ -405,7 +406,37 @@ npm run ci:moodle-suite -- --suite local-all --iterations 2
 
 After the last iteration it reads environment facts from the running stack into `reports/environment-facts.json`: the Moodle release and version through the Moodle CLI (`scripts/moodle/read-moodle-release.php`), and the image reference and registry digest of the running `moodle` container (`docker inspect`, then `RepoDigests` of its image). These are never copied from `docker-compose.yml`, because `MOODLE_DOCKER_IMAGE` can override the image; an image without a registry digest fails the run. The facts, the commit SHA, the run URL, the iteration count and the per-iteration results are added to the Allure `environment.properties`. The job summary shows a table of passed and failed scenarios and steps per iteration.
 
-The workflow uploads `reports/`, `screenshots/`, `videos/`, `traces/` and the sanitized seed metadata as the `moodle-<suite>-evidence` artifact, on failure too, for 14 days. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
+The workflow uploads `reports/`, `screenshots/`, `videos/`, `traces/` and the sanitized seed metadata as the `moodle-<suite>-evidence` artifact, on failure too, for 14 days. These artifacts are the place to debug a failed run (traces, failure videos and screenshots). They expire; the release is the durable store.
+
+### Evidence releases
+
+After a passed local suite (any suite except `fast-api`) the job always prepares the release assets, so a trial dispatch with `publish_release=false` shows exactly what a release would contain:
+
+```bash
+npm run evidence:package
+npm run evidence:secret-guard
+```
+
+`evidence:package` (`scripts/build-release-assets.ts`) packages only runs in which every requested iteration passed, into `reports/release-assets/`:
+
+- `allure-report.html`: the single-file Allure report (`npm run report:allure -- --single-file`). Data, scripts and the branding stylesheet are inlined, so it opens offline from `file://`; Allure's own analytics request is the only network call and is not needed to render.
+- `cucumber-report-iteration-<n>.json`: Cucumber JSON per iteration.
+- `environment-summary.json`: suite, commit, run URL, Moodle release and version, image reference and digest, and the per-iteration scenario and step counts.
+- `video-iteration-<n>-<k>-<scenario>.webm`: `local-demo-screencast-all` only. The videos may total at most 200 MiB; a larger set fails packaging instead of publishing a partial set. The single-file report embeds the same videos again.
+- `release-notes.md`: the release body (not uploaded as an asset). It states the suite, commit, Moodle release and version, image digest, iteration count with per-iteration results, the run URL, and that the run used a controlled local Docker Moodle seeded with deterministic data. It makes no claim beyond these numbers.
+
+`evidence:secret-guard` (`scripts/check-evidence-secrets.ts`) scans every file in that folder for the actual values of `MOODLE_ADMIN_PASSWORD`, `MOODLE_TEACHER_PASSWORD`, `MOODLE_STUDENT_PASSWORD`, `MOODLE_MANAGER_PASSWORD`, `MOODLE_DB_PASSWORD`, `MOODLE_DB_ROOT_PASSWORD` and `MOODLE_API_TOKEN`, taken from the job environment and from `.env`, plus the local demo password that `apply-seed-env` fills in. It matches plain, JSON-, HTML- and URL-escaped and UTF-16 forms, decodes every embedded base64 run and unpacks zip and gzip content (Playwright traces are zips inside the base64-embedded report). Any match, any value shorter than six characters and any content it cannot unpack refuse the publish. Its output names variables, files and encodings, never a value. The release-assets artifact is uploaded only after the guard passes.
+
+Playwright traces record typed values, including the demo password. Traces are kept only for failed scenarios in the `fast` profile, which never publish, but the screencast run records them for every scenario, so the guard refuses `local-demo-screencast-all` releases. That is intended until traces are left out of the screencast release assets.
+
+With `publish_release=true`, the `publish-release` job runs only when the suite job succeeded and the suite is not `fast-api`. It is the only job with `contents: write`. It downloads the release assets, runs the secret guard again and creates a prerelease with the GitHub CLI:
+
+- tag `evidence-<run id>-<run attempt>`, unique per run and attempt, targeting the tested commit (`github.sha`);
+- marked as a prerelease and never as latest, with an `Evidence:` title, so it cannot be mistaken for a product version.
+
+Releases of this private repository are visible to repository collaborators only. Record published runs in [Evidence Index](EVIDENCE_INDEX.md#controlled-moodle-evidence-releases).
+
+The job timeout stays at 45 minutes. A local dry run of `local-all` with two iterations took about one minute after the stack was ready. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
 
 Required email secrets when email sending is enabled:
 

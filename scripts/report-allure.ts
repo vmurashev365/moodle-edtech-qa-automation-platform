@@ -161,27 +161,26 @@ function writeJsonIfMissing(filePath: string, payload: unknown): void {
   }
 }
 
+// Allure leaves these out when no result carries behavior or package labels, and its UI then shows
+// load errors on the Behaviors and Packages pages.
+const missingReportData: [string, unknown][] = [
+  ['widgets/behaviors.json', { total: 0, items: [] }],
+  ['data/behaviors.json', { uid: 'behaviors-empty', name: 'behaviors', children: [] }],
+  ['data/packages.json', { uid: 'packages-empty', name: 'packages', children: [] }]
+];
+
 function writeMissingReportData(): void {
-  const widgetsDir = path.join(reportDir, 'widgets');
-  const dataDir = path.join(reportDir, 'data');
-
-  mkdirSync(widgetsDir, { recursive: true });
-  mkdirSync(dataDir, { recursive: true });
-
-  writeJsonIfMissing(path.join(widgetsDir, 'behaviors.json'), { total: 0, items: [] });
-  writeJsonIfMissing(path.join(dataDir, 'behaviors.json'), { uid: 'behaviors-empty', name: 'behaviors', children: [] });
-  writeJsonIfMissing(path.join(dataDir, 'packages.json'), { uid: 'packages-empty', name: 'packages', children: [] });
+  for (const [name, payload] of missingReportData) {
+    mkdirSync(path.dirname(path.join(reportDir, name)), { recursive: true });
+    writeJsonIfMissing(path.join(reportDir, name), payload);
+  }
 }
 
 function svgDataUrl(svg: string): string {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function injectReportBranding(): void {
-  const assetsDir = path.join(reportDir, 'assets');
-  const indexPath = path.join(reportDir, 'index.html');
-  const stylesheetName = 'moodle-allure-branding.css';
-  const stylesheetPath = path.join(assetsDir, stylesheetName);
+function brandingCss(): string {
   const bookIcon = svgDataUrl(
     [
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">',
@@ -194,17 +193,21 @@ function injectReportBranding(): void {
     ].join('')
   );
 
-  writeFileSync(
-    stylesheetPath,
-    [
-      '.executor-icon__edtech,',
-      '.executor-icon__local {',
-      `  background-image: url("${bookIcon}") !important;`,
-      '  background-size: contain;',
-      '}',
-      ''
-    ].join('\n')
-  );
+  return [
+    '.executor-icon__edtech,',
+    '.executor-icon__local {',
+    `  background-image: url("${bookIcon}") !important;`,
+    '  background-size: contain;',
+    '}',
+    ''
+  ].join('\n');
+}
+
+function injectReportBranding(): void {
+  const indexPath = path.join(reportDir, 'index.html');
+  const stylesheetName = 'moodle-allure-branding.css';
+
+  writeFileSync(path.join(reportDir, 'assets', stylesheetName), brandingCss());
 
   const indexHtml = readFileSync(indexPath, 'utf8');
 
@@ -216,7 +219,32 @@ function injectReportBranding(): void {
   }
 }
 
+// A single-file report must open offline over file://, so the branding stylesheet and the missing
+// report data go into index.html itself. The data uses the report's own embedding (d(name, base64)).
+function inlineSingleFileExtras(): void {
+  const indexPath = path.join(reportDir, 'index.html');
+  const dataListStart = 'Promise.allSettled([';
+  let indexHtml = readFileSync(indexPath, 'utf8');
+
+  if (!indexHtml.includes('</head>') || !indexHtml.includes(dataListStart)) {
+    throw new Error('The single-file report has an unexpected layout; branding and report data were not inlined.');
+  }
+
+  const embeddedData = missingReportData
+    .filter(([name]) => !indexHtml.includes(`d('${name}'`))
+    .map(([name, payload]) => `d('${name}','${Buffer.from(JSON.stringify(payload)).toString('base64')}'),`)
+    .join('\n        ');
+
+  // Function replacements, so "$" sequences in the inserted text are never read as patterns.
+  indexHtml = indexHtml
+    .replace('</head>', () => `    <style id="moodle-allure-branding">\n${brandingCss()}    </style>\n  </head>`)
+    .replace(dataListStart, () => `${dataListStart}\n        ${embeddedData}`);
+  writeFileSync(indexPath, indexHtml);
+}
+
 function main(): void {
+  const singleFile = process.argv.slice(2).includes('--single-file');
+
   if (!hasAllureResults()) {
     console.error('[report:allure] no Allure result files found under reports/allure-results');
     process.exit(1);
@@ -228,7 +256,8 @@ function main(): void {
   writeCategories();
 
   const allureBin = path.resolve('node_modules', 'allure-commandline', 'bin', 'allure');
-  const result = spawnSync(process.execPath, [allureBin, 'generate', resultsDir, '--clean', '-o', reportDir], {
+  const generateArgs = ['generate', resultsDir, '--clean', '-o', reportDir, ...(singleFile ? ['--single-file'] : [])];
+  const result = spawnSync(process.execPath, [allureBin, ...generateArgs], {
     stdio: 'inherit',
     env: { ...process.env, DEBUG: '' }
   });
@@ -238,7 +267,9 @@ function main(): void {
     process.exit(1);
   }
 
-  if (result.status === 0) {
+  if (result.status === 0 && singleFile) {
+    inlineSingleFileExtras();
+  } else if (result.status === 0) {
     writeMissingReportData();
     injectReportBranding();
   }
