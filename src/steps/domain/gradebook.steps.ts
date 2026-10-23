@@ -1,7 +1,9 @@
 import { Given, Then, When } from '@cucumber/cucumber';
 import { GradebookPage } from '../../pages/gradebook/GradebookPage';
 import type { MoodleWorld } from '../../support/custom-world';
+import { expectStoredGrade, readGradeState } from '../../support/grade-state';
 import { pendingImplementation } from '../../utils/assertions';
+import { attachJson } from '../../utils/evidence';
 
 Given(
   'student {string} has grade {string} for {string}',
@@ -37,4 +39,12 @@ When('I open the controlled gradebook', async function (this: MoodleWorld) {
 Then('the gradebook should show the target grade for the deterministic student', async function (this: MoodleWorld) {
   const gradebookPage = new GradebookPage(this.requirePage());
   await gradebookPage.expectTargetGradeForDeterministicStudent(this.env);
+});
+
+// Backend reconciliation through the Moodle CLI (not Web Services): the grade written in the UI must be the
+// grade Moodle stores for the assignment and in the gradebook.
+Then('Moodle should store the target grade for the deterministic student', async function (this: MoodleWorld) {
+  const state = readGradeState(this.env);
+  await attachJson(this, 'Moodle backend grade state (CLI)', state);
+  expectStoredGrade(state, this.env.targetGrade);
 });

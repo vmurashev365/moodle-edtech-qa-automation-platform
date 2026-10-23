@@ -2,6 +2,7 @@ import { Before } from '@cucumber/cucumber';
 import { attachJson } from '../utils/evidence';
 import type { MoodleWorld } from './custom-world';
 import type { TestEnv } from './env';
+import type { GradebookState } from './grade-state';
 import { runMoodleCliScript } from './moodle-cli';
 
 export interface UngradedBaselineResult {
@@ -9,7 +10,7 @@ export interface UngradedBaselineResult {
   cmid: number;
   studentId: number;
   assignGrade: number | null;
-  gradebookState: 'ungraded' | 'graded' | 'regrade-error' | 'missing';
+  gradebookState: GradebookState;
   gradebookGrade: number | null;
   status: string;
 }

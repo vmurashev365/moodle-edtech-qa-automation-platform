@@ -27,7 +27,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Phase 5 local teacher submission review: implemented for controlled seeded Moodle; run `npm run moodle:seed:ready` or run seed plus `.env` sync before the workflow; public report/screenshot link TBD
 - Phase 5 Mission 1-5 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission1-4` and `tools/recordings/localhost_mission5`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
 - Phase 6 Mission 6 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission6`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
-- Phase 6 local teacher grading and gradebook verification: implemented with `npm run test:local:grading`; requires `npm run moodle:seed:ready` first so the Student QA grade starts from the ungraded baseline
+- Phase 6 local teacher grading, gradebook verification and Moodle CLI backend reconciliation: implemented with `npm run test:local:grading`; requires `npm run moodle:seed:ready` first so the Student QA grade starts from the ungraded baseline
 - Demo execution profile: headed local Moodle review mode with terminal scenario/step output and small pacing delays
 - Fast execution profile: headless CI-friendly mode with no artificial delays
 - Failed Cucumber browser scenarios: Playwright trace zip is saved under ignored `traces/` when `MOODLE_TRACE_MODE=retain-on-failure` or `on`
@@ -67,7 +67,8 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Local grading command: `npm run test:local:grading` is guarded against zero-scenario false green results and selects one executable Phase 6 scenario when seeded data is ready
 - Current status: Implemented locally; proof requires `npm run moodle:seed:ready` followed by `npm run test:local:grading`
 - Verified UI behavior: teacher grades Student QA with `MOODLE_TARGET_GRADE`; gradebook row for `MOODLE_STUDENT_ID` shows Student QA and `student.qa@example.test`, and its assignment cell (grade item `MOODLE_ASSIGNMENT_GRADE_ITEM_ID`) equals the formatted target grade exactly; Course total is not accepted as proof
-- API status: API coverage remains preflight/helper-level; missing Moodle Web Service token warnings are non-blocking for this UI proof
+- Backend reconciliation: the read-only `scripts/moodle/read-grade-state.php` (Moodle CLI) must report assignment grade = gradebook grade = `MOODLE_TARGET_GRADE` with gradebook state `graded`; the state is attached as "Moodle backend grade state (CLI)" JSON. With the `@ungraded-baseline` hook this covers starting state → UI write → stored state
+- API status: API coverage remains preflight/helper-level; the backend check above is not Web Services coverage, and missing token warnings are non-blocking
 - Public Allure report/demo evidence: TBD
 
 ## Phase 2 design artifacts

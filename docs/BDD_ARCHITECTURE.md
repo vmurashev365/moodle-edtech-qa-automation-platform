@@ -191,4 +191,4 @@ The Phase 3 skeleton maps this design into:
 | API helpers           | Setup, teardown, and canonical state validation.                                                                                    |
 | Evidence hooks        | Terminal scenario/step visibility, Allure attachments, screenshots on failure, API response attachments, trace/video where enabled. |
 
-Phases 4–6 run real workflows against the local controlled Moodle: the login smoke, the teacher submission review and the teacher grading scenario. The remaining scenarios stay `@wip` with pending step contracts until their Moodle selectors and Web Service functions are verified.
+Phases 4–6 run real workflows against the local controlled Moodle: the login smoke, the teacher submission review and the teacher grading scenario, which checks the gradebook in the UI and reconciles the stored grade through the Moodle CLI. The remaining scenarios stay `@wip` with pending step contracts until their Moodle selectors and Web Service functions are verified.

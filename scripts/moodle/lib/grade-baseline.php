@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// Shared by seed-controlled-data.php and reset-ungraded-baseline.php. Callers must load Moodle
+// Shared by seed-controlled-data.php, reset-ungraded-baseline.php and read-grade-state.php. Callers must load Moodle
 // config.php, mod/assign/locallib.php and lib/gradelib.php, and act as an admin user.
 
 function qa_reset_grade_to_ungraded(stdClass $course, stdClass $cm, stdClass $student): array {

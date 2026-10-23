@@ -4,7 +4,7 @@
 
 This document explains how to run the automation skeleton, the Phase 4 local Moodle smoke, the Phase 5 local teacher workflow, the Phase 6 local grading/gradebook workflow, and CI-safe checks.
 
-The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Phase 5 adds a teacher-facing submission review path that requires controlled seed data. Phase 6 adds one local UI proof for teacher grading and gradebook row verification after deterministic seeding.
+The current framework is executable. The Phase 4 local smoke verifies the controlled Moodle login page. Phase 5 adds a teacher-facing submission review path that requires controlled seed data. Phase 6 adds one local scenario for teacher grading, gradebook row verification and backend reconciliation of the stored grade through the Moodle CLI.
 
 ## Local Setup
 
@@ -62,7 +62,7 @@ Key variables:
 
 Blank variables fall back to their defaults. A variable that is set to an invalid value (for example `MOODLE_TARGET_GRADE=82abc`, `UI_EXPECT_TIMEOUT_MS=10s`, `MOODLE_HEADLESS=maybe` or `MOODLE_TRACE_MODE=always`) fails with an error naming the variable instead of silently using the default.
 
-The API token may be blank during skeleton validation. API mutation and backend reconciliation helpers remain pending until Moodle Web Services are configured.
+The API token may be blank during skeleton validation. Web Service mutation and validation helpers remain pending until Moodle Web Services are configured; the Phase 6 backend check uses the Moodle CLI and needs no token.
 Legacy `HEADLESS`, `TRACE_MODE`, `TRACE_ON_FAILURE`, and `VIDEO_ON_FAILURE` variables are kept only for compatibility/deprecation clarity. Prefer the `MOODLE_*` runtime variables above for new local runs and CI configuration.
 
 ## Execution Profiles
@@ -175,6 +175,7 @@ Before running the grading scenario as evidence, confirm:
 - assignment grade scale accepts `MOODLE_TARGET_GRADE`, default `82`
 - seed reset leaves Student QA grading baseline as not graded
 - the UI scenario saves the target grade and gradebook displays it for `MOODLE_STUDENT_DISPLAY_NAME`
+- `scripts/moodle/read-grade-state.php` (read-only, run as `daemon` with a 20-second limit) reports the same grade for the assignment and the gradebook
 
 The seed does not pre-grade the submission with the target grade. It resets the controlled grade to Moodle's ungraded baseline through the assign grading API so the UI scenario must perform the write. Do not treat the generated local artifact as gradebook evidence.
 
@@ -319,7 +320,7 @@ The commands above exclude `@wip`. Every executable suite command (`test:*`, inc
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
 
-`test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading plus gradebook row verification path.
+`test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading, gradebook row verification and Moodle CLI backend reconciliation path.
 
 ## Failure Evidence
 

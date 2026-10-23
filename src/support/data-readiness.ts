@@ -220,7 +220,9 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
   }
 
   if (!isApiTokenConfigured(env.apiToken)) {
-    warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
+    warnings.push(
+      'MOODLE_API_TOKEN is not configured; Phase 6 verifies the grade through the UI and the Moodle CLI, not Web Services.'
+    );
   }
 
   return {

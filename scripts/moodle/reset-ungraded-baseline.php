@@ -7,42 +7,18 @@ define('CLI_SCRIPT', true);
 // Lightweight per-scenario reset: puts the deterministic student's assignment grade back to
 // "not graded" without re-running the full controlled seed.
 
+require_once(__DIR__ . '/lib/cli-support.php');
+
+const RESET_FAILURE_PREFIX = 'Ungraded baseline reset failed';
+
 function reset_fail(string $message): void {
-    fwrite(STDERR, "Ungraded baseline reset failed: {$message}" . PHP_EOL);
-    exit(1);
+    qa_cli_fail(RESET_FAILURE_PREFIX, $message);
 }
 
-function reset_required_int_env(string $name): int {
-    $value = trim((string) getenv($name));
+$cmid = qa_cli_required_int_env(RESET_FAILURE_PREFIX, 'MOODLE_ASSIGNMENT_ID');
+$studentid = qa_cli_required_int_env(RESET_FAILURE_PREFIX, 'MOODLE_STUDENT_ID');
 
-    if (!preg_match('/^[1-9][0-9]*$/', $value)) {
-        reset_fail("{$name} must be a positive integer; received \"{$value}\". Run npm run moodle:seed:ready.");
-    }
-
-    return (int) $value;
-}
-
-function reset_find_config(): string {
-    $candidates = [
-        '/opt/bitnami/moodle/config.php',
-        '/bitnami/moodle/config.php',
-        '/var/www/html/config.php',
-        getcwd() . '/config.php',
-    ];
-
-    foreach ($candidates as $candidate) {
-        if (is_readable($candidate)) {
-            return $candidate;
-        }
-    }
-
-    reset_fail('Could not find Moodle config.php in the known container paths.');
-}
-
-$cmid = reset_required_int_env('MOODLE_ASSIGNMENT_ID');
-$studentid = reset_required_int_env('MOODLE_STUDENT_ID');
-
-require_once reset_find_config();
+require_once qa_cli_find_config(RESET_FAILURE_PREFIX);
 
 global $CFG, $USER;
 

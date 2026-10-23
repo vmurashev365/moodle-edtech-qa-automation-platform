@@ -19,6 +19,7 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
   - `I open the grading interface from the assignment page`
 - `I open the controlled course` and `I open the controlled assignment` (direct links from `.env`) are unchanged and no longer used by Phase 5.
 - Renamed `the preflight result should report API token configuration status` to `the preflight result should report the API token status consistently with the environment`. The old step only checked that the status was a boolean. The new one checks that the preflight summary, `MoodleClient` and the missing-token warning all agree with `MOODLE_API_TOKEN`; a whitespace-only token counts as not configured everywhere.
+- Added `Moodle should store the target grade for the deterministic student` (Phase 6, after the gradebook UI check). It reads the stored grade through the Moodle CLI (`scripts/moodle/read-grade-state.php`, read-only) and requires the assignment grade to equal `MOODLE_TARGET_GRADE`, the gradebook state to be `graded` and the gradebook grade to equal the target. A regrade error and a missing grade item fail with their own messages. This is a backend check, not Moodle Web Services coverage.
 - `I grade the deterministic student submission with the target grade` now requires the "Current grade in gradebook" value to equal the formatted target grade exactly (`82.00`), instead of the field merely containing it (which `182.00` also satisfied).
 
 ### Features

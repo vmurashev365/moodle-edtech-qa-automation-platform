@@ -10,3 +10,4 @@ Feature: Teacher assignment grading
     And I grade the deterministic student submission with the target grade
     And I open the controlled gradebook
     Then the gradebook should show the target grade for the deterministic student
+    And Moodle should store the target grade for the deterministic student
