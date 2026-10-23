@@ -28,6 +28,7 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Phase 5 Mission 1-5 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission1-4` and `tools/recordings/localhost_mission5`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
 - Phase 6 Mission 6 Recorder/Codegen findings: captured locally under ignored `tools/recordings/localhost_mission6`; sanitized locator decisions are summarized in [Recorder Findings](RECORDER_FINDINGS.md)
 - Phase 6 local teacher grading, gradebook verification and Moodle CLI backend reconciliation: implemented with `npm run test:local:grading`; requires `npm run moodle:seed:ready` first so the Student QA grade starts from the ungraded baseline
+- Phase 7 local role-negative check: implemented with `npm run test:local:security`; requires `npm run moodle:seed:ready`
 - Demo execution profile: headed local Moodle review mode with terminal scenario/step output and small pacing delays
 - Fast execution profile: headless CI-friendly mode with no artificial delays
 - Failed Cucumber browser scenarios: Playwright trace zip is saved under ignored `traces/` when `MOODLE_TRACE_MODE=retain-on-failure` or `on`
@@ -70,6 +71,13 @@ Purpose: a concise navigation page for reviewers to find key evidence and artifa
 - Backend reconciliation: the read-only `scripts/moodle/read-grade-state.php` (Moodle CLI) must report assignment grade = gradebook grade = `MOODLE_TARGET_GRADE` with gradebook state `graded`; the state is attached as "Moodle backend grade state (CLI)" JSON. With the `@ungraded-baseline` hook this covers starting state → UI write → stored state
 - API status: API coverage remains preflight/helper-level; the backend check above is not Web Services coverage, and missing token warnings are non-blocking
 - Public Allure report/demo evidence: TBD
+
+## Phase 7 role-access workflow
+
+- Local command: `npm run test:local:security` is guarded against zero-scenario false green results
+- Verified UI behavior: Student QA, confirmed by the user menu, opens `action=grader&userid=<MOODLE_STUDENT_ID>` and gets Moodle's `error/nopermission` error (errorcode `nopermission`, HTTP 404). The capability check is `mod/assign:viewgrades` or `mod/assign:grade` (`assign::require_view_grades()`); the page does not name it. The page must not be the login page, and only after the error is visible may the `Grade out of` input and `Save changes` action be absent
+- Follow-ups: the submissions table (`action=grading`) and the gradebook grader report have no role-negative check yet
+- Public Allure report: TBD
 
 ## Phase 2 design artifacts
 

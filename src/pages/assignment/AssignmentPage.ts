@@ -8,6 +8,8 @@ const deterministicSubmissionText =
   'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';
 // Mission 5 Recorder evidence shows this Moodle semantic container owns submission status facts.
 const moodleSubmissionStatusPanelSelector = '.submissionstatustable';
+// Moodle's fatal error box (core_renderer::fatal_error), rendered when a page throws before any output.
+const moodleFatalErrorSelector = '[data-rel="fatalerror"]';
 
 export class AssignmentPage extends BasePage {
   async openControlledAssignment(env: TestEnv): Promise<void> {
@@ -63,6 +65,66 @@ export class AssignmentPage extends BasePage {
     if (env.studentId) {
       await this.expectUrlToContain(`userid=${env.studentId}`);
     }
+  }
+
+  // Opens the single-user grading interface for the deterministic student without expecting grader content,
+  // for users who must be refused. Returns the HTTP status of the final response.
+  async attemptSingleUserGrading(env: TestEnv): Promise<number> {
+    const gradingUrl = resolveAssignmentGradingUrl(env);
+
+    if (!gradingUrl || !env.studentId) {
+      throw new Error(
+        'MOODLE_ASSIGNMENT_GRADING_URL (or MOODLE_ASSIGNMENT_ID) and MOODLE_STUDENT_ID are required to open ' +
+          'teacher-only grading for the deterministic student. Run npm run moodle:seed:ready.'
+      );
+    }
+
+    const url = new URL(gradingUrl, env.baseUrl);
+
+    if (url.searchParams.get('action') !== 'grader' || url.searchParams.get('userid') !== env.studentId) {
+      throw new Error(
+        `Expected the grading URL to open action=grader for userid=${env.studentId}, but it is ${gradingUrl}.`
+      );
+    }
+
+    const response = await this.page.goto(url.toString());
+    await this.waitForReady();
+
+    if (!response) {
+      throw new Error(`Opening ${url.toString()} returned no HTTP response.`);
+    }
+
+    return response.status();
+  }
+
+  // view_grader() calls assign::require_view_grades(), which throws required_capability_exception for
+  // mod/assign:viewgrades with errorcode "nopermission" unless the user has mod/assign:viewgrades or
+  // mod/assign:grade. Moodle 5.0.1 has no language string for that errorcode, so the page prints
+  // "error/nopermission" and does not name the capability.
+  async expectSingleUserGradingDenied(env: TestEnv): Promise<void> {
+    const fatalError = this.page.locator(moodleFatalErrorSelector).first();
+
+    await this.expectUrlToContain('action=grader');
+    await this.expectUrlToContain(`userid=${env.studentId}`);
+    await uiExpect(
+      fatalError,
+      'Expected Moodle to refuse the single-user grading interface with its permission error.'
+    ).toBeVisible();
+    await uiExpect(
+      fatalError.locator('.errormessage'),
+      'Expected the Moodle error to be the "nopermission" capability error.'
+    ).toHaveText('error/nopermission');
+    await uiExpect(
+      fatalError.getByRole('link', { name: 'More information about this error' }),
+      'Expected the Moodle error documentation link to name errorcode "nopermission".'
+    ).toHaveAttribute('href', /\/error\/moodle\/nopermission$/);
+  }
+
+  // Absence checks also pass on a page that has not rendered, so call this only after a positive anchor such as
+  // expectSingleUserGradingDenied().
+  async expectNoGradingControls(): Promise<void> {
+    await uiExpect(this.gradeInput(), 'Expected no Moodle "Grade out of" input.').toHaveCount(0);
+    await uiExpect(this.saveChangesButton(), 'Expected no Moodle "Save changes" action.').toHaveCount(0);
   }
 
   async expectDeterministicSubmissionVisible(env: TestEnv): Promise<void> {

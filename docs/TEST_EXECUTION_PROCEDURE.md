@@ -303,6 +303,12 @@ Phase 6 local grading workflow gate:
 npm run test:local:grading
 ```
 
+Phase 7 local role-negative check:
+
+```bash
+npm run test:local:security
+```
+
 Suite commands prepared for later implementation:
 
 ```bash
@@ -314,11 +320,13 @@ npm run test:media
 npm run test:all
 ```
 
-The commands above exclude `@wip`. Every executable suite command (`test:*`, including the `local`, `demo` and `fast` variants) goes through a scenario guard (`scripts/lib/scenario-guard.ts`) that counts the selected scenarios with the Cucumber API before the run and exits non-zero when none are selected. When every matching scenario is tagged `@wip`, the error says so; today `test:security` and `test:media` fail this way until their scenarios are implemented. `test:wip` is the only unguarded command.
+The commands above exclude `@wip`. Every executable suite command (`test:*`, including the `local`, `demo` and `fast` variants) goes through a scenario guard (`scripts/lib/scenario-guard.ts`) that counts the selected scenarios with the Cucumber API before the run and exits non-zero when none are selected. When every matching scenario is tagged `@wip`, the error says so; today `test:media` fails this way until its scenario is implemented. `test:smoke`, `test:security` and `test:all` select the Phase 7 role-access feature and need a seeded stack. `test:wip` is the only unguarded command.
 
 `test:local:smoke` requires the local controlled Moodle instance to be running and reachable. It does not require teacher/student/course/assignment provisioning.
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
+
+`test:local:security` is local-only and requires `npm run moodle:seed:ready`. A signed-in Student QA opens the single-user grading URL; the scenario requires Moodle's `error/nopermission` page with HTTP 404 while the student is still signed in, and only then checks that no grade input or Save changes action is present. A redirect to the login page or another signed-in user fails it.
 
 `test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading, gradebook row verification and Moodle CLI backend reconciliation path.
 

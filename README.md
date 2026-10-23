@@ -74,18 +74,18 @@ Implemented:
 - Phase 5 submission-review foundation with controlled seed readiness checks
 - local controlled Moodle seed and safe `.env` sync commands
 - Phase 6 local teacher grading plus gradebook row verification and Moodle CLI backend reconciliation of the stored grade
+- Phase 7 local role-negative check: a signed-in student is refused Moodle's single-user grading interface
 - demo and fast execution profiles for local review and CI-safe runs
 - Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `MOODLE_TRACE_MODE=retain-on-failure`
 
 Blocked / WIP:
 
 - broader API-backed grade reset/reconciliation through Moodle Web Services
-- security, media, and role-negative workflows beyond existing skeleton coverage
+- media workflows, and role-negative checks for teacher-only pages other than the single-user grading interface
 
 Planned:
 
 - API-backed reset and backend validation
-- role negative test
 - audio/media test
 - public Allure report and demo video
 

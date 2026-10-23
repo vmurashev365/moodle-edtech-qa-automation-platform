@@ -1,4 +1,4 @@
-@security @student @teacher @assignment @controlled-moodle @wip
+@security @student @teacher @assignment @controlled-moodle @local @phase7
 Feature: Role based access
   Student users must not be able to access teacher-only grading workflows.
 

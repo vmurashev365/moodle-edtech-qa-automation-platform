@@ -56,6 +56,51 @@ export class LoginPage extends BasePage {
     }
   }
 
+  // The user menu avatar carries the signed-in user's full name (Moodle renders initials with that name as
+  // aria-label for users without a picture), so it identifies who is signed in on any standard-layout page.
+  async expectSignedInAs(displayName: string): Promise<void> {
+    const userMenu = this.userMenuToggle();
+
+    await uiExpect(
+      userMenu,
+      `Expected Moodle to show the user menu of "${displayName}", but this page shows no user menu ` +
+        '(no user is signed in, or the page is not a standard Moodle page).'
+    ).toBeVisible();
+
+    try {
+      await uiExpect(userMenu.getByRole('img', { name: displayName, exact: true })).toBeVisible();
+    } catch {
+      // Short optional read of the actual identity for the failure message. Assertion timing stays in uiExpect.
+      const actualName = await userMenu
+        .getByRole('img')
+        .first()
+        .getAttribute('aria-label', { timeout: 1000 })
+        .catch(() => null);
+
+      throw new Error(
+        `Expected Moodle to be signed in as "${displayName}", but the user menu belongs to ` +
+          `${actualName ? `"${actualName}"` : 'an unidentified user'}.`
+      );
+    }
+  }
+
+  // Moodle sends signed-out users to /login/index.php, where teacher-only controls are absent as well, so a
+  // missing control proves nothing unless this holds.
+  expectNotOnLoginPage(): void {
+    const currentUrl = this.page.url();
+
+    if (new URL(currentUrl).pathname.endsWith('/login/index.php')) {
+      throw new Error(
+        `Expected a signed-in Moodle page, but Moodle redirected to its login page (${currentUrl}), so no user is signed in.`
+      );
+    }
+  }
+
+  async expectLoginFormAbsent(): Promise<void> {
+    await uiExpect(this.usernameField(), 'Expected no Moodle login username field on this page.').toHaveCount(0);
+    await uiExpect(this.passwordField(), 'Expected no Moodle login password field on this page.').toHaveCount(0);
+  }
+
   // When the loginpasswordtoggle admin setting is on, Moodle's core/togglesensitive module re-renders
   // #password from its outerHTML after page load. A password typed before that swap is silently dropped
   // and the form posts an empty password, so wait for the swap whenever the page initialises the module.

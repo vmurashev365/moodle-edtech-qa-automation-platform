@@ -13,6 +13,10 @@ export interface ApiPreflightState {
   envValidation?: EnvValidationResult;
 }
 
+export interface RoleAccessState {
+  graderResponseStatus?: number;
+}
+
 export class MoodleWorld extends World {
   readonly env: TestEnv;
   readonly runtimeProfile: RuntimeProfile;
@@ -21,6 +25,7 @@ export class MoodleWorld extends World {
   context?: BrowserContext;
   page?: Page;
   apiPreflight: ApiPreflightState = {};
+  roleAccess: RoleAccessState = {};
   private tracingStarted = false;
 
   constructor(options: IWorldOptions) {

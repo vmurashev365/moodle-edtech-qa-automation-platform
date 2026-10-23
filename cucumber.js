@@ -14,7 +14,8 @@ const common = {
 const localDemoPaths = [
   'features/smoke/controlled-moodle-login-smoke.feature',
   'features/e2e/teacher-dashboard-assignment-review.feature',
-  'features/e2e/teacher-assignment-grading.feature'
+  'features/e2e/teacher-assignment-grading.feature',
+  'features/security/role-access.feature'
 ];
 
 const demoCommon = {

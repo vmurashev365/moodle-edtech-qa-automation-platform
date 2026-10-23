@@ -14,6 +14,7 @@
     "test:wip": "cucumber-js --profile wip",
     "test:local:smoke": "ts-node scripts/run-cucumber-with-scenario-guard.ts --name test-local-smoke --profile smoke --tags \"@phase4 and @local and not @wip\"",
     "test:local:teacher-workflow": "ts-node scripts/run-cucumber-with-scenario-guard.ts --name test-local-teacher-workflow --profile e2e --tags \"@phase5 and @local and not @wip\"",
+    "test:local:security": "ts-node scripts/run-cucumber-with-scenario-guard.ts --name test-local-security --profile security --tags \"@phase7 and @local and not @wip\"",
     "check:local:grading-readiness": "ts-node scripts/check-grading-data.ts",
     "test:local:grading": "ts-node scripts/check-grading-data.ts && ts-node scripts/run-cucumber-with-scenario-guard.ts --profile e2e --tags \"@phase6 and @local and not @wip\" --name test-local-grading",
     "test:demo:smoke": "ts-node scripts/run-cucumber-profile.ts demo --profile smoke --tags \"@phase4 and @local and not @wip\"",
