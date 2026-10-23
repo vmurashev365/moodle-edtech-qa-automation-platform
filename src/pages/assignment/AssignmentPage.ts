@@ -164,11 +164,15 @@ export class AssignmentPage extends BasePage {
   }
 
   private async expectSavedCurrentGrade(targetGrade: number): Promise<void> {
-    await uiExpect(this.currentGradeInGradebook(), 'Expected Moodle current grade field to be visible.').toBeVisible();
+    const expectedGrade = this.formattedGrade(targetGrade);
+
+    await uiExpect(this.currentGradeInGradebook(), 'Expected Moodle current grade value to be visible.').toBeVisible();
+    // toHaveText with a string is an exact match after whitespace normalization, so 182.00 or 82.001
+    // cannot satisfy it.
     await uiExpect(
       this.currentGradeInGradebook(),
-      'Expected current grade in gradebook to match saved UI grade.'
-    ).toContainText(this.formattedGrade(targetGrade));
+      `Expected current grade in gradebook to equal saved UI grade ${expectedGrade}.`
+    ).toHaveText(expectedGrade);
   }
 
   private async expectNoVisibleValidationErrors(): Promise<void> {
@@ -194,8 +198,10 @@ export class AssignmentPage extends BasePage {
     return this.page.getByRole('button', { name: /^Save changes$/i }).first();
   }
 
+  // Moodle 5.0 grading form: the static "Current grade in gradebook" field renders only the value
+  // (a gradebook link reading "82.00" or "Not graded") in .currentgrade, apart from the field label.
   private currentGradeInGradebook(): Locator {
-    return this.page.locator('#fitem_id_currentgrade').first();
+    return this.page.locator('#fitem_id_currentgrade [data-name="currentgrade"] .currentgrade').first();
   }
 
   private visibleValidationErrors(): Locator {

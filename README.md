@@ -101,7 +101,7 @@ Planned:
 
 Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. The local Docker stack pins the Moodle image by digest to Moodle 5.0.1 (Build: 20250609). Mount Orange Moodle demo is recon-only and must not be used as the CI target.
 
-The local Docker Compose file uses configurable Moodle and database image variables. The default images are intended for local portfolio validation only; pin or mirror approved images before treating the stack as long-lived infrastructure.
+The image names come from `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`; their defaults in `docker-compose.yml` and `.env.example` are the Moodle digest above and the `bitnamilegacy/mariadb:11.4` tag. A local `.env` that still sets `MOODLE_DOCKER_IMAGE=bitnamilegacy/moodle:latest` overrides the pin. Mirror the images before treating the stack as long-lived infrastructure.
 
 ## Planned user roles
 
@@ -302,7 +302,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission review, and Phase 6 local grading/gradebook scenario remain skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. The Docker image defaults remain configurable; pinning the Moodle image is deferred until the seeded local workflow is proven against a specific version.
+Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission review, and Phase 6 local grading/gradebook scenario remain skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published.
 
 ---
 

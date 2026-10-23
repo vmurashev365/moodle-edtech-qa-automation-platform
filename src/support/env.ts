@@ -61,6 +61,15 @@ function readSeededUserPassword(name: string): string {
   return value === 'changeme' ? localDemoUserPassword : value;
 }
 
+// The only definition of "API token configured": a whitespace-only token is not a token. Used by the
+// environment contract, MoodleClient and the data readiness checks so they cannot disagree.
+export function isApiTokenConfigured(token: string | undefined): boolean {
+  return (token ?? '').trim().length > 0;
+}
+
+export const missingApiTokenWarning =
+  'MOODLE_API_TOKEN is not configured; Moodle Web Service mutation and validation helpers remain pending.';
+
 // The seed creates the controlled assignment with a maximum grade of 100 and whole-number grades.
 export const targetGradeRange = { min: 0, max: 100 };
 
@@ -134,8 +143,8 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
     warnings.push('MOODLE_AUDIO_RESOURCE_NAME is empty; media smoke scenarios will remain blocked.');
   }
 
-  if (!env.apiToken) {
-    warnings.push('MOODLE_API_TOKEN is not configured; mutation and backend reconciliation helpers remain pending.');
+  if (!isApiTokenConfigured(env.apiToken)) {
+    warnings.push(missingApiTokenWarning);
   }
 
   for (const [key, value] of Object.entries({
@@ -169,7 +178,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       gradingNavigationConfigured: Boolean(env.assignmentGradingUrl || env.assignmentId || env.assignmentUrl),
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       readyTimeoutMs: env.readyTimeoutMs,
-      apiTokenConfigured: Boolean(env.apiToken),
+      apiTokenConfigured: isApiTokenConfigured(env.apiToken),
       executionProfile: env.executionProfile,
       headless: env.headless,
       slowMoMs: env.slowMoMs,

@@ -6,4 +6,4 @@ Feature: Controlled Moodle API preflight
     Given the controlled Moodle environment configuration is loaded
     When I validate the Moodle API preflight contract
     Then the preflight result should confirm the base URL and controlled data names
-    And the preflight result should report API token configuration status
+    And the preflight result should report the API token status consistently with the environment

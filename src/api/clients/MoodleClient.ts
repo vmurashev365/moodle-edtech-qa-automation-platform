@@ -1,5 +1,5 @@
 import type { TestEnv } from '../../support/env';
-import { validateEnvContract } from '../../support/env';
+import { isApiTokenConfigured, validateEnvContract } from '../../support/env';
 import type {
   MoodleWebServiceException,
   MoodleWebServiceRequest,
@@ -20,7 +20,7 @@ export class MoodleClient {
   }
 
   get apiTokenConfigured(): boolean {
-    return this.env.apiToken.trim().length > 0;
+    return isApiTokenConfigured(this.env.apiToken);
   }
 
   async callWebService<T>(request: MoodleWebServiceRequest): Promise<MoodleWebServiceResponse<T>> {

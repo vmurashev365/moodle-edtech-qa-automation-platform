@@ -18,6 +18,8 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
   - `I open the controlled assignment from the course page`
   - `I open the grading interface from the assignment page`
 - `I open the controlled course` and `I open the controlled assignment` (direct links from `.env`) are unchanged and no longer used by Phase 5.
+- Renamed `the preflight result should report API token configuration status` to `the preflight result should report the API token status consistently with the environment`. The old step only checked that the status was a boolean. The new one checks that the preflight summary, `MoodleClient` and the missing-token warning all agree with `MOODLE_API_TOKEN`; a whitespace-only token counts as not configured everywhere.
+- `I grade the deterministic student submission with the target grade` now requires the "Current grade in gradebook" value to equal the formatted target grade exactly (`82.00`), instead of the field merely containing it (which `182.00` also satisfied).
 
 ### Features
 

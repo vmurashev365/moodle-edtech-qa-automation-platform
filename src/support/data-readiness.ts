@@ -1,5 +1,5 @@
 import type { TestEnv } from './env';
-import { loadEnv } from './env';
+import { isApiTokenConfigured, loadEnv } from './env';
 
 export interface ControlledDataReadinessResult {
   ok: boolean;
@@ -158,7 +158,7 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
     );
   }
 
-  if (!hasValue(env.apiToken)) {
+  if (!isApiTokenConfigured(env.apiToken)) {
     warnings.push('MOODLE_API_TOKEN is not configured; Phase 5 seed validation is UI/manual only.');
   }
 
@@ -176,7 +176,7 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
       submissionsDirectNavigationReady: Boolean(submissionsUrl),
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       studentSearchTermCount: studentTerms.length,
-      apiTokenConfigured: Boolean(env.apiToken)
+      apiTokenConfigured: isApiTokenConfigured(env.apiToken)
     }
   };
 }
@@ -219,7 +219,7 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     errors.push('MOODLE_ASSIGNMENT_GRADE_ITEM_ID is required before running Phase 6 gradebook cell validation.');
   }
 
-  if (!hasValue(env.apiToken)) {
+  if (!isApiTokenConfigured(env.apiToken)) {
     warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
   }
 

@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document defines the Moodle BDD Lego Steps architecture for Phase 2 test design. It explains how Cucumber scenarios should be structured before Phase 3 adds feature files, step definitions, page objects, API helpers, and CI.
+This document defines the Moodle BDD Lego Steps architecture. It was written for Phase 2 test design and explains how Cucumber scenarios, step definitions, page objects and API helpers are structured; Phases 3–6 implement it.
 
 The architecture preserves the Atomic -> Domain -> Composite model required by repository governance.
 
@@ -191,4 +191,4 @@ The Phase 3 skeleton maps this design into:
 | API helpers           | Setup, teardown, and canonical state validation.                                                                                    |
 | Evidence hooks        | Terminal scenario/step visibility, Allure attachments, screenshots on failure, API response attachments, trace/video where enabled. |
 
-The current skeleton provides the structure and pending step contracts. Real Moodle workflow automation remains pending until controlled Moodle selectors and Web Service functions are verified.
+Phases 4–6 run real workflows against the local controlled Moodle: the login smoke, the teacher submission review and the teacher grading scenario. The remaining scenarios stay `@wip` with pending step contracts until their Moodle selectors and Web Service functions are verified.
