@@ -13,7 +13,20 @@ on:
           - local-smoke
           - local-teacher-workflow
           - local-grading
+          - local-security
+          - local-all
           - local-demo-screencast-all
+      iterations:
+        description: Runs of the suite on the same stack; only the first run seeds
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
       send_email:
         description: Send stakeholder email digest when SMTP secrets are configured
         required: true
@@ -22,7 +35,7 @@ on:
 
 jobs:
   run-selected-suite:
-    name: Run ${{ inputs.suite }}
+    name: Run ${{ inputs.suite }} x${{ inputs.iterations }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -69,13 +82,16 @@ jobs:
         if: inputs.suite != 'fast-api'
         run: npm run moodle:wait
 
-      - name: Run selected suite with Allure report
+      - name: Run selected suite iterations with Allure report
         id: run_suite
         shell: bash
+        env:
+          SUITE: ${{ inputs.suite }}
+          ITERATIONS: ${{ inputs.iterations }}
         run: |
           set +e
 
-          if [[ "${{ inputs.suite }}" != "fast-api" ]]; then
+          if [[ "$SUITE" != "fast-api" ]]; then
             # Local Moodle suites must use generated seed metadata from .env, not stale job-level values.
             unset MOODLE_BASE_URL
             unset MOODLE_COURSE_ID
@@ -91,27 +107,9 @@ jobs:
             unset MOODLE_STUDENT_PASSWORD
           fi
 
-          case "${{ inputs.suite }}" in
-            fast-api)
-              npm run test:fast:api:report
-              ;;
-            local-smoke)
-              npm run test:fast:smoke:report
-              ;;
-            local-teacher-workflow)
-              npm run test:fast:teacher-workflow:report
-              ;;
-            local-grading)
-              npm run test:fast:grading:report
-              ;;
-            local-demo-screencast-all|local-grading-screencast)
-              MOODLE_HEADLESS=true npm run test:demo:screencast:all
-              ;;
-            *)
-              echo "Unknown suite: ${{ inputs.suite }}"
-              exit 1
-              ;;
-          esac
+          # Seeds before iteration 1 (local suites), runs every iteration, reads the Moodle release and
+          # image digest from the running stack, generates the Allure report and writes the job summary.
+          npm run ci:moodle-suite -- --suite "$SUITE" --iterations "$ITERATIONS"
 
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"

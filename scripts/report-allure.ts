@@ -3,6 +3,8 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import path from 'node:path';
 import { loadEnv } from '../src/support/env';
 import { resolveRuntimeProfile, type RuntimeProfile } from '../src/support/runtime-profile';
+import { githubRunUrl, readEnvironmentFacts } from './lib/environment-facts';
+import { formatCounts, readRunSummary } from './lib/evidence-run';
 
 const resultsDir = path.resolve('reports', 'allure-results');
 const reportDir = path.resolve('reports', 'allure-report');
@@ -17,18 +19,6 @@ function hasAllureResults(): boolean {
   }
 
   return readdirSync(resultsDir).some((file) => file.endsWith('-result.json') || file.endsWith('-container.json'));
-}
-
-function githubRunUrl(): string | undefined {
-  const serverUrl = process.env.GITHUB_SERVER_URL;
-  const repository = process.env.GITHUB_REPOSITORY;
-  const runId = process.env.GITHUB_RUN_ID;
-
-  if (!serverUrl || !repository || !runId) {
-    return undefined;
-  }
-
-  return `${serverUrl}/${repository}/actions/runs/${runId}`;
 }
 
 function readRuntimeProfileSnapshot(): RuntimeProfile {
@@ -66,6 +56,29 @@ function readRuntimeProfileSnapshot(): RuntimeProfile {
   }
 }
 
+// Present only after scripts/run-moodle-suite.ts, which reads them from the running stack. Plain local
+// report runs leave these keys out instead of showing placeholders.
+function runFactLines(): [string, string][] {
+  const facts = readEnvironmentFacts();
+  const summary = readRunSummary();
+  const lines: [string, string | undefined][] = [
+    ['Suite', summary?.suite ?? facts?.suite],
+    ['MoodleRelease', facts?.moodle?.release],
+    ['MoodleVersion', facts?.moodle?.version],
+    ['MoodleImage', facts?.moodleImage?.reference],
+    ['MoodleImageDigest', facts?.moodleImage?.digest],
+    ['CommitSha', facts?.commitSha],
+    ['RunUrl', facts?.runUrl],
+    ['Iterations', summary ? String(summary.iterationsRequested) : undefined],
+    ...(summary?.iterations ?? []).map((result): [string, string] => [
+      `Iteration${result.iteration}`,
+      `${result.passed ? 'passed' : 'failed'}; scenarios ${formatCounts(result.scenarios)}; steps ${formatCounts(result.steps)}`
+    ])
+  ];
+
+  return lines.filter((line): line is [string, string] => line[1] !== undefined);
+}
+
 function writeEnvironmentProperties(): void {
   const env = loadEnv();
   const runtimeProfile = readRuntimeProfileSnapshot();
@@ -86,7 +99,8 @@ function writeEnvironmentProperties(): void {
     ['StudentEmail', env.studentEmail],
     ['TargetGrade', env.targetGrade],
     ['NodeVersion', process.version],
-    ['GeneratedAt', new Date().toISOString()]
+    ['GeneratedAt', new Date().toISOString()],
+    ...runFactLines()
   ];
 
   writeFileSync(

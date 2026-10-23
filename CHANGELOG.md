@@ -10,6 +10,11 @@ BDD vocabulary changes (steps, tags, feature names) are recorded here, as requir
 - Added `@phase7` for the role-access feature (`features/security/role-access.feature`), which also gains `@local` and loses `@wip`. Its `@smoke` scenario is now selected by `test:smoke`, `test:security` and `test:all`, which therefore need a seeded stack (`npm run moodle:seed:ready`). `test:fast:*`, `test:local:smoke` and `test:demo:smoke` select `@phase4` or `@api` only and are unchanged.
 - Added `npm run test:local:security` (guarded, `@phase7 and @local and not @wip`). The role-access feature is in the `demo` paths, so `test:demo:all` runs it.
 
+### Commands
+
+- Added `npm run test:local:all` (guarded, `@local and not @wip` across all feature files, after the grading data check) and `npm run test:local:screencast:all` (the screencast run without the seed; `test:demo:screencast:all` now seeds and calls it).
+- Added `npm run ci:moodle-suite -- --suite <suite> --iterations <1-5>`, the command the Manual Moodle Test Run workflow runs. No tags or steps changed.
+
 ### Steps
 
 - Removed `I open the submissions view`. It opened Moodle's single-user grading interface (`action=grader`), not the submissions table.

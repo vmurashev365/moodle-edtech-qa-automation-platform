@@ -309,6 +309,12 @@ Phase 7 local role-negative check:
 npm run test:local:security
 ```
 
+Every implemented local scenario (Phase 4 smoke, Phase 5 teacher workflow, Phase 6 grading, Phase 7 role access), after the grading data check:
+
+```bash
+npm run test:local:all
+```
+
 Suite commands prepared for later implementation:
 
 ```bash
@@ -329,6 +335,8 @@ The commands above exclude `@wip`. Every executable suite command (`test:*`, inc
 `test:local:security` is local-only and requires `npm run moodle:seed:ready`. A signed-in Student QA opens the single-user grading URL; the scenario requires Moodle's `error/nopermission` page with HTTP 404 while the student is still signed in, and only then checks that no grade input or Save changes action is present. A redirect to the login page or another signed-in user fails it. A second scenario (`@ungraded-baseline`, needs Docker for the Moodle CLI) has the student send the grading panel's Save changes request (`mod_assign_submit_grading_form`) with the student's own session key; it requires errorcode `nopermissions` for `mod/assign:grade` and a stored grade that is still not graded and unchanged.
 
 `test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading, gradebook row verification and Moodle CLI backend reconciliation path.
+
+`test:local:all` is local-only and requires `npm run moodle:seed:ready`. It selects `@local and not @wip` across all feature files (five scenarios today) and runs headless with the `fast` profile defaults. `test:local:screencast:all` is the screencast run without the seed; `test:demo:screencast:all` seeds and then calls it.
 
 ## Failure Evidence
 
@@ -370,17 +378,34 @@ The public Allure report link remains TBD until a real controlled Moodle run is 
 
 ## Manual GitHub Actions Workflow
 
-The **Manual Moodle Test Run** workflow is launched from GitHub Actions with `workflow_dispatch`. It is intended for QA/developer runs from a laptop, tablet, phone, or GitHub mobile app.
+The **Manual Moodle Test Run** workflow (`.github/workflows/manual-moodle.yml`) runs only on `workflow_dispatch`; it has no schedule and no pull request trigger. Every dispatch starts a fresh Docker stack and removes it, volumes included, at the end.
 
-Available suites:
+To dispatch it: GitHub → Actions → Manual Moodle Test Run → Run workflow, choose the branch and the inputs, then Run workflow. The GitHub mobile app offers the same form.
 
-- `fast-api`: CI-safe API/environment preflight, no local Moodle Docker.
-- `local-smoke`: starts local Moodle in GitHub Actions and verifies the login page.
-- `local-teacher-workflow`: starts Moodle, seeds deterministic data, and runs the teacher submission-review workflow.
-- `local-grading`: starts Moodle, seeds the ungraded baseline, grades Student QA, and verifies the gradebook.
-- `local-demo-screencast-all`: runs `npm run test:demo:screencast:all` headlessly in GitHub Actions, with Allure/Cucumber evidence plus video/click-visualizer artifacts.
+Inputs:
 
-The workflow uploads local evidence artifacts from `reports/`, `screenshots/`, `videos/`, `traces/`, and sanitized seed metadata. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
+- `suite`:
+  - `fast-api`: CI-safe API/environment preflight, no local Moodle Docker.
+  - `local-smoke`: Phase 4 login page smoke (`test:local:smoke`).
+  - `local-teacher-workflow`: Phase 5 teacher submission review (`test:local:teacher-workflow`).
+  - `local-grading`: Phase 6 grading, gradebook and CLI reconciliation (`test:local:grading`).
+  - `local-security`: Phase 7 role access (`test:local:security`).
+  - `local-all`: every implemented local scenario, headless, no screencast (`test:local:all`).
+  - `local-demo-screencast-all`: the local scenarios with screencast video and click visualizer (`test:local:screencast:all`), headless in Actions.
+- `iterations` (1–5, default 1): how many times the suite runs on the same stack. Iteration 1 seeds with `npm run moodle:seed:ready` (local suites only); later iterations do not re-seed and rely on the `@ungraded-baseline` hooks. A seed failure stops the run and marks the remaining iterations as not run.
+- `send_email`: see below.
+
+The run step calls the same command you can run locally against a running stack:
+
+```bash
+npm run ci:moodle-suite -- --suite local-all --iterations 2
+```
+
+`scripts/run-moodle-suite.ts` runs each iteration, keeps its Cucumber JSON and Allure results under `reports/iterations/iteration-<n>/`, and writes `reports/iterations/summary.json` with the scenario and step counts per iteration. In the merged Allure report each result carries an `Iteration` parameter, an `Iteration <n>` parent suite and its own history id, so Allure lists every iteration instead of folding earlier ones into retries. The command fails if any iteration fails, runs no scenario, or exits non-zero.
+
+After the last iteration it reads environment facts from the running stack into `reports/environment-facts.json`: the Moodle release and version through the Moodle CLI (`scripts/moodle/read-moodle-release.php`), and the image reference and registry digest of the running `moodle` container (`docker inspect`, then `RepoDigests` of its image). These are never copied from `docker-compose.yml`, because `MOODLE_DOCKER_IMAGE` can override the image; an image without a registry digest fails the run. The facts, the commit SHA, the run URL, the iteration count and the per-iteration results are added to the Allure `environment.properties`. The job summary shows a table of passed and failed scenarios and steps per iteration.
+
+The workflow uploads `reports/`, `screenshots/`, `videos/`, `traces/` and the sanitized seed metadata as the `moodle-<suite>-evidence` artifact, on failure too, for 14 days. Optional stakeholder email uses SMTP secrets and sends a short digest with the run link and artifact locations; large reports/videos stay in GitHub Actions artifacts.
 
 Required email secrets when email sending is enabled:
 
