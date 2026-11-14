@@ -358,7 +358,7 @@ Run WIP scenarios deliberately:
 npm run test:wip
 ```
 
-WIP scenarios contain pending step implementations and are expected to fail with explicit pending messages. This is intentional and prevents fake-green automation.
+WIP scenarios contain pending step implementations and are expected to fail with explicit pending messages. This is intentional and prevents fake-green automation. Their implemented steps (sign-in, main-menu and course navigation) run in a browser first, so `test:wip` needs the running seeded stack (`npm run moodle:seed:ready`), and each scenario stops at the step that is still pending, naming it.
 
 ## Allure Report Commands
 

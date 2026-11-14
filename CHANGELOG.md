@@ -18,6 +18,8 @@ Tags:
 
 - Removed `@ungraded-baseline` and its Before hook. `student {string} has an ungraded submission for {string}` now resets the grade itself and verifies the result.
 - A Before hook checks that the controlled Moodle is reachable for every `@local` scenario, so no scenario states it.
+- `@wip` scenarios now get a browser like every other UI scenario. Their implemented sign-in and navigation steps run, and each scenario stops at its first pending step with that step's message instead of failing at sign-in. `test:wip` therefore needs the running seeded stack.
+- The `@wip` features "Course assignment access" and "Assignment submissions" gain `the teacher opens "My courses" from the dashboard` before `the teacher opens course {string}`, which clicks the course where the current page lists it.
 
 Steps shared by several scenarios:
 

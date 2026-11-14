@@ -250,7 +250,7 @@ Run pending WIP scenarios intentionally:
 npm run test:wip
 ```
 
-`@wip` scenarios are expected to fail with explicit pending implementation messages until Moodle selectors and API functions are confirmed.
+`@wip` scenarios are expected to fail with explicit pending implementation messages until Moodle selectors and API functions are confirmed. Their implemented steps (sign-in, navigation) run first, so `test:wip` needs the running seeded stack and each scenario stops at the step that is still pending.
 
 GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 

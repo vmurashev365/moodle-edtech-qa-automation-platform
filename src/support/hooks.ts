@@ -26,7 +26,9 @@ BeforeAll(function () {
 Before(async function (this: MoodleWorld, scenario: ITestCaseHookParameter) {
   const tags = scenario.pickle.tags.map((tag) => tag.name);
 
-  if (tags.includes('@api') || tags.includes('@wip')) {
+  // @wip scenarios get a browser too: their implemented steps (sign-in, navigation) run, so each scenario
+  // stops at the step that is still pending and reports that step's own message.
+  if (tags.includes('@api')) {
     return;
   }
 
