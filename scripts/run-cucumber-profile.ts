@@ -1,17 +1,12 @@
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import * as dotenv from 'dotenv';
+
+import { resolveRuntimeProfile, type RuntimeProfile } from '../src/support/runtime-profile';
 import { logger } from '../src/utils/logger';
-
-interface CucumberJsonElement {
-  type?: string;
-  keyword?: string;
-}
-
-interface CucumberJsonFeature {
-  elements?: CucumberJsonElement[];
-}
+import { emptySelectionMessage, inspectScenarioSelection } from './lib/scenario-guard';
 
 interface ParsedArgs {
   executionProfile: 'demo' | 'fast';
@@ -76,32 +71,6 @@ function hasCucumberProfile(args: string[]): boolean {
   return args.includes('--profile') || args.some((arg) => arg.startsWith('--profile='));
 }
 
-function safeFileName(name: string): string {
-  return (
-    name
-      .replace(/[^a-z0-9]+/gi, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase() || 'cucumber-selection'
-  );
-}
-
-function countSelectedScenarios(reportPath: string): number {
-  if (!existsSync(reportPath)) {
-    return 0;
-  }
-
-  const payload = JSON.parse(readFileSync(reportPath, 'utf8')) as CucumberJsonFeature[];
-
-  if (!Array.isArray(payload)) {
-    return 0;
-  }
-
-  return payload.reduce((count, feature) => {
-    const elements = Array.isArray(feature.elements) ? feature.elements : [];
-    return count + elements.filter((element) => element.type === 'scenario' || element.keyword === 'Scenario').length;
-  }, 0);
-}
-
 function clean(value: string | undefined): string | undefined {
   const cleaned = value?.trim();
   return cleaned ? cleaned : undefined;
@@ -109,25 +78,6 @@ function clean(value: string | undefined): string | undefined {
 
 function isCiEnvironment(env: NodeJS.ProcessEnv): boolean {
   return env.CI === 'true' || env.GITHUB_ACTIONS === 'true';
-}
-
-function readBooleanEnv(value: string | undefined, fallback: boolean): boolean {
-  const cleaned = clean(value)?.toLowerCase();
-
-  if (!cleaned) {
-    return fallback;
-  }
-
-  return !['0', 'false', 'no', 'off'].includes(cleaned);
-}
-
-function readModeEnv(value: string | undefined, fallback: string): string {
-  return clean(value) ?? fallback;
-}
-
-function readNumberEnv(value: string | undefined, fallback: number): number {
-  const parsed = Number.parseInt(clean(value) ?? '', 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }
 
 function buildEnv(profile: 'demo' | 'fast', screencast: boolean, headlessOverride?: boolean): NodeJS.ProcessEnv {
@@ -157,19 +107,17 @@ function buildEnv(profile: 'demo' | 'fast', screencast: boolean, headlessOverrid
   return env;
 }
 
-function writeRuntimeProfileSnapshot(env: NodeJS.ProcessEnv): void {
+function writeRuntimeProfileSnapshot(profile: RuntimeProfile): void {
   const resultsDir = path.resolve('reports', 'allure-results');
-  const profileName = clean(env.MOODLE_EXECUTION_PROFILE) ?? 'fast';
-  const screencastEnabled = readBooleanEnv(env.MOODLE_SCREENCAST, false);
   const payload = {
-    name: profileName,
-    headless: readBooleanEnv(env.MOODLE_HEADLESS, profileName === 'fast'),
-    screencastEnabled,
-    slowMoMs: readNumberEnv(env.MOODLE_SLOW_MO_MS, profileName === 'demo' ? 200 : 0),
-    stepDelayMs: readNumberEnv(env.MOODLE_STEP_DELAY_MS, profileName === 'demo' ? 350 : 0),
-    traceMode: screencastEnabled ? 'on' : readModeEnv(env.MOODLE_TRACE_MODE, 'retain-on-failure'),
-    videoMode: screencastEnabled ? 'on' : readModeEnv(env.MOODLE_VIDEO_MODE, 'off'),
-    terminalStepsEnabled: readBooleanEnv(env.MOODLE_TERMINAL_STEPS, profileName === 'demo'),
+    name: profile.name,
+    headless: profile.headless,
+    screencastEnabled: profile.screencastEnabled,
+    slowMoMs: profile.slowMoMs,
+    stepDelayMs: profile.stepDelayMs,
+    traceMode: profile.traceMode,
+    videoMode: profile.videoMode,
+    terminalStepsEnabled: profile.terminalStepsEnabled,
     generatedAt: new Date().toISOString()
   };
 
@@ -177,34 +125,33 @@ function writeRuntimeProfileSnapshot(env: NodeJS.ProcessEnv): void {
   writeFileSync(path.join(resultsDir, 'runtime-profile.json'), JSON.stringify(payload, null, 2));
 }
 
-function main(): void {
+async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
   const cucumberBin = path.resolve('node_modules', '@cucumber', 'cucumber', 'bin', 'cucumber-js');
-  const reportDirectory = path.resolve('reports', 'cucumber');
   const cucumberArgs = [...parsed.cucumberArgs];
+  const guardLabel = parsed.guardLabel ?? `${parsed.executionProfile} run`;
+  const selection = await inspectScenarioSelection(cucumberArgs);
 
-  mkdirSync(reportDirectory, { recursive: true });
-
-  let guardReportPath: string | undefined;
-
-  if (parsed.guardLabel) {
-    const guardReportRelativePath = path.posix.join(
-      'reports',
-      'cucumber',
-      `${safeFileName(parsed.guardLabel)}-guard-report.json`
-    );
-    guardReportPath = path.resolve(guardReportRelativePath);
-    cucumberArgs.push('--format', `json:${guardReportRelativePath}`);
+  if (selection.selected === 0) {
+    logger.error(emptySelectionMessage(guardLabel, selection));
+    process.exitCode = 1;
+    return;
   }
 
+  logger.info(`${guardLabel} selected ${selection.selected} executable Cucumber scenario(s).`);
+
+  // Load .env without overriding the outer environment, exactly as the Cucumber child process will,
+  // so the snapshot describes the profile the browser actually runs with.
+  dotenv.config();
   const runEnv = buildEnv(parsed.executionProfile, parsed.screencast, parsed.headlessOverride);
-  writeRuntimeProfileSnapshot(runEnv);
+  const runtimeProfile = resolveRuntimeProfile(runEnv);
+  writeRuntimeProfileSnapshot(runtimeProfile);
 
   logger.info(
     `Running Cucumber in ${parsed.executionProfile}${parsed.screencast ? ' screencast' : ''} mode: ${cucumberArgs.join(' ')}`
   );
   logger.info(
-    `Runtime profile resolved for this run: headless=${runEnv.MOODLE_HEADLESS}, screencast=${runEnv.MOODLE_SCREENCAST ?? 'false'}, video=${runEnv.MOODLE_VIDEO_MODE ?? '<default>'}, trace=${runEnv.MOODLE_TRACE_MODE ?? '<default>'}, slowMoMs=${runEnv.MOODLE_SLOW_MO_MS ?? '<default>'}, stepDelayMs=${runEnv.MOODLE_STEP_DELAY_MS ?? '<default>'}`
+    `Runtime profile resolved for this run: headless=${runtimeProfile.headless}, screencast=${runtimeProfile.screencastEnabled}, video=${runtimeProfile.videoMode}, trace=${runtimeProfile.traceMode}, slowMoMs=${runtimeProfile.slowMoMs}, stepDelayMs=${runtimeProfile.stepDelayMs}`
   );
 
   const result = spawnSync(process.execPath, [cucumberBin, ...cucumberArgs], {
@@ -217,26 +164,10 @@ function main(): void {
     throw result.error;
   }
 
-  if (guardReportPath) {
-    const selectedScenarioCount = countSelectedScenarios(guardReportPath);
-
-    if (selectedScenarioCount === 0 && result.status === 0) {
-      logger.error(
-        `${parsed.guardLabel} selected 0 executable Cucumber scenarios. Failing intentionally to prevent a false-green command.`
-      );
-      process.exitCode = 1;
-      return;
-    }
-
-    logger.info(`${parsed.guardLabel} selected ${selectedScenarioCount} executable Cucumber scenario(s).`);
-  }
-
   process.exitCode = result.status ?? 1;
 }
 
-try {
-  main();
-} catch (error) {
+main().catch((error: unknown) => {
   logger.error((error as Error).message);
   process.exitCode = 1;
-}
+});

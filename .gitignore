@@ -1,5 +1,5 @@
-# Local-only reference implementations
-/_reference_*/
+# Local workspace, never committed
+/.local/
 
 # Local env / generated evidence
 node_modules/

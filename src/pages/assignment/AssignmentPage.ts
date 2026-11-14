@@ -1,98 +1,220 @@
 import type { Locator } from '@playwright/test';
-import type { TestEnv } from '../../support/env';
-import { resolveAssignmentGradingUrl, resolveAssignmentUrl } from '../../support/data-readiness';
+import type { GradingRequestResponse } from '../../domain/access-comparison';
+import type { SubmissionObservation } from '../../domain/grade-comparison';
 import { uiExpect } from '../../support/ui-expect';
 import { BasePage } from '../base/BasePage';
 
-const deterministicSubmissionText =
-  'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';
-// Mission 5 Recorder evidence shows this Moodle semantic container owns submission status facts.
-const moodleSubmissionStatusPanelSelector = '.submissionstatustable';
+// Mission 5 Recorder evidence shows this Moodle semantic container owns submission status facts. In Moodle 5.0 it
+// holds one element per fact: .submissionstatus<status>, .submissionnotgraded or .submissiongraded, and the
+// submission plugins' content.
+const submissionStatusPanelSelector = '.submissionstatustable';
+const studentInfoSelector = '[data-region="user-info"]';
+// Moodle's fatal error box (core_renderer::fatal_error), rendered when a page throws before any output.
+const fatalErrorSelector = '[data-rel="fatalerror"]';
+
+// Who the single-user grading interface must show.
+export interface StudentIdentity {
+  id: number | string;
+  displayName: string;
+  email: string;
+}
+
+export interface GradingServiceRequest {
+  cmid: number;
+  assignmentInstanceId: number;
+  userId: number;
+  grade: number;
+}
+
+// What a refused grading page shows, for comparison evidence.
+export interface GradingRefusalPageObservation {
+  errorMessage: string | null;
+  errorDocumentationHref: string | null;
+  gradeInputCount: number;
+  saveButtonCount: number;
+}
 
 export class AssignmentPage extends BasePage {
-  async openControlledAssignment(env: TestEnv): Promise<void> {
-    const assignmentUrl = resolveAssignmentUrl(env);
-
-    if (assignmentUrl) {
-      await this.gotoUrl(assignmentUrl);
-    } else {
-      await this.openAssignment(env.assignmentName);
-    }
-
-    await this.expectAssignmentContext(env.assignmentName);
-  }
-
-  async openAssignment(assignmentName: string): Promise<void> {
+  // Clicks the assignment where the current page lists it, for example on the course page.
+  async openAssignmentFromCoursePage(assignmentName: string): Promise<void> {
     const assignmentLink = this.assignmentLink(assignmentName);
 
     await uiExpect(
       assignmentLink,
-      `Expected assignment link "${assignmentName}" to be visible before navigation.`
+      `Expected assignment "${assignmentName}" to be listed on this page; open its course first.`
     ).toBeVisible();
     await assignmentLink.click();
     await this.waitForReady();
+    await this.expectAssignmentContext(assignmentName);
   }
 
-  // Compatibility with existing Cucumber wording: the controlled one-submission assignment opens
-  // Moodle's single-user grading interface when the teacher chooses the verified Grade action.
-  async openSubmissions(env: TestEnv): Promise<void> {
-    await this.openGradingInterface(env);
-  }
+  // Mission 5: the assignment page's Grade action opens Moodle's single-user grading interface
+  // (action=grader) at the first participant.
+  async openGradingInterfaceFromAssignmentPage(): Promise<void> {
+    const gradeAction = this.gradeAction();
 
-  async openGradingInterface(env: TestEnv): Promise<void> {
-    const gradingUrl = resolveAssignmentGradingUrl(env);
-
-    if (gradingUrl) {
-      await this.gotoUrl(gradingUrl);
-    } else {
-      const gradeAction = this.gradeAction();
-
-      await uiExpect(gradeAction, 'Expected the controlled assignment Grade action to be visible.').toBeVisible();
-      await gradeAction.click();
-      await this.waitForReady();
-    }
-
+    await uiExpect(gradeAction, 'Expected the assignment Grade action to be visible.').toBeVisible();
+    await gradeAction.click();
+    await this.waitForReady();
     await this.expectUrlToContain('action=grader');
+  }
 
-    if (env.studentId) {
-      await this.expectUrlToContain(`userid=${env.studentId}`);
+  // Opens Moodle's single-user grading interface for one student's submission by its URL.
+  async openSingleUserGrading(gradingUrl: string, student: StudentIdentity): Promise<void> {
+    await this.gotoUrl(gradingUrl);
+    await this.expectUrlToContain('action=grader');
+    await this.expectUrlToContain(`userid=${student.id}`);
+  }
+
+  // Opens the single-user grading interface without expecting grader content, for users who must be refused.
+  // Returns the HTTP status of the final response.
+  async attemptSingleUserGrading(gradingUrl: string): Promise<number> {
+    const response = await this.page.goto(gradingUrl);
+    await this.waitForReady();
+
+    if (!response) {
+      throw new Error(`Opening ${gradingUrl} returned no HTTP response.`);
     }
+
+    return response.status();
   }
 
-  async expectDeterministicSubmissionVisible(env: TestEnv): Promise<void> {
-    await this.expectDeterministicStudentVisible(env);
-    await this.expectSubmissionReadyForGrading();
+  // The page is Moodle's capability error on the grading URL of this student's submission; see
+  // refusedGradingPageError for why the error reads "error/nopermission".
+  async expectSingleUserGradingDenied(
+    student: StudentIdentity,
+    error: { message: string; documentationPath: string }
+  ): Promise<void> {
+    await this.expectUrlToContain('action=grader');
+    await this.expectUrlToContain(`userid=${student.id}`);
+    await uiExpect(
+      this.fatalError(),
+      'Expected Moodle to refuse the single-user grading interface with its permission error.'
+    ).toBeVisible();
+    await uiExpect(
+      this.fatalErrorMessage(),
+      `Expected the Moodle error to be the "${error.message}" capability error.`
+    ).toHaveText(error.message);
+    await uiExpect(
+      this.fatalErrorDocumentationLink(),
+      `Expected the Moodle error documentation link to point to ${error.documentationPath}.`
+    ).toHaveAttribute('href', new RegExp(`${this.escapeForRegExp(error.documentationPath)}$`));
   }
 
-  async gradeSubmission(username: string, grade: string): Promise<void> {
-    void username;
-    void grade;
-    this.pendingSelectors('teacher grading workflow');
+  // Absence checks also pass on a page that has not rendered, so call this only after a positive anchor such as
+  // expectSingleUserGradingDenied().
+  async expectNoGradingControls(): Promise<void> {
+    await uiExpect(this.gradeInput(), 'Expected no Moodle "Grade out of" input.').toHaveCount(0);
+    await uiExpect(this.saveChangesButton(), 'Expected no Moodle "Save changes" action.').toHaveCount(0);
   }
 
-  async gradeDeterministicSubmissionWithTargetGrade(env: TestEnv): Promise<void> {
-    await this.expectDeterministicStudentVisible(env);
-    await this.expectSubmissionReadyForGrading();
-    await this.expectCurrentGradeIsNotTarget(env.targetGrade);
+  async observeGradingRefusal(): Promise<GradingRefusalPageObservation> {
+    return {
+      errorMessage: await this.readText(this.fatalErrorMessage()),
+      errorDocumentationHref: await this.readAttribute(this.fatalErrorDocumentationLink(), 'href'),
+      gradeInputCount: await this.gradeInput().count(),
+      saveButtonCount: await this.saveChangesButton().count()
+    };
+  }
+
+  // Sends, from the current page with the signed-in user's session key, the request the single-user grading panel
+  // sends on "Save changes" (mod/assign/amd/src/grading_panel.js): mod_assign_submit_grading_form through
+  // lib/ajax/service.php. assignmentid is the assign instance id, not the cmid; jsonformdata is the grade form,
+  // URL-encoded and then JSON-encoded, with the fields the panel serialises.
+  async submitGradeThroughGradingService(request: GradingServiceRequest): Promise<GradingRequestResponse> {
+    return this.page.evaluate(async ({ cmid, assignmentInstanceId, userId, grade }) => {
+      const moodleConfig = (window as unknown as { M?: { cfg?: { sesskey?: string; wwwroot?: string } } }).M?.cfg;
+
+      if (!moodleConfig?.sesskey || !moodleConfig.wwwroot) {
+        throw new Error('The current page exposes no Moodle session key (M.cfg.sesskey); sign in first.');
+      }
+
+      const formData = new URLSearchParams({
+        id: String(cmid),
+        rownum: '0',
+        useridlistid: '',
+        attemptnumber: '-1',
+        ajax: '0',
+        userid: '0',
+        sendstudentnotifications: 'false',
+        action: 'submitgrade',
+        sesskey: moodleConfig.sesskey,
+        [`_qf__mod_assign_grade_form_${userId}`]: '1',
+        grade: String(grade),
+        'assignfeedbackcomments_editor[text]': '',
+        'assignfeedbackcomments_editor[format]': '1',
+        'assignfeedbackcomments_editor[itemid]': '0'
+      }).toString();
+      const serviceUrl = new URL(`${moodleConfig.wwwroot.replace(/\/$/, '')}/lib/ajax/service.php`);
+      serviceUrl.searchParams.set('sesskey', moodleConfig.sesskey);
+      serviceUrl.searchParams.set('info', 'mod_assign_submit_grading_form');
+
+      const response = await fetch(serviceUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([
+          {
+            index: 0,
+            methodname: 'mod_assign_submit_grading_form',
+            args: { assignmentid: assignmentInstanceId, userid: userId, jsonformdata: JSON.stringify(formData) }
+          }
+        ])
+      });
+      const text = await response.text();
+      let body: unknown;
+
+      try {
+        body = JSON.parse(text) as unknown;
+      } catch {
+        body = text;
+      }
+
+      return { httpStatus: response.status, body };
+    }, request);
+  }
+
+  // The grading interface shows this student's submitted, not yet graded work with the text they handed in.
+  async expectSubmissionReadyForGrading(student: StudentIdentity, submissionText: string): Promise<void> {
+    await this.expectStudentVisible(student);
+    await this.expectSubmissionStatusReadyForGrading(submissionText);
+  }
+
+  async observeSubmission(): Promise<SubmissionObservation> {
+    const studentInfo = this.page.locator(studentInfoSelector).first();
+    const statusPanel = this.submissionStatusPanel();
+
+    return {
+      studentName: await this.readOwnText(studentInfo.locator('h4 a').first()),
+      studentEmail: await this.readText(studentInfo.locator('small').first()),
+      submissionStatus: await this.readText(statusPanel.locator('> div[class^="submissionstatus"]').first()),
+      gradingStatus: await this.readText(statusPanel.locator('> div[class*="graded"]').first()),
+      submissionText: await this.readText(statusPanel.locator('.assignsubmission_onlinetext .no-overflow').first())
+    };
+  }
+
+  // Enters the grade for the student shown in the single-user grading interface and saves it.
+  async gradeSubmission(student: StudentIdentity, submissionText: string, grade: number): Promise<void> {
+    await this.expectSubmissionReadyForGrading(student, submissionText);
+    await this.expectCurrentGradeIsNot(grade);
 
     const gradeInput = this.gradeInput();
     const saveButton = this.saveChangesButton();
 
     await uiExpect(gradeInput, 'Expected Moodle grade input to be visible.').toBeVisible();
-    await gradeInput.fill(String(env.targetGrade));
+    await gradeInput.fill(String(grade));
     await saveButton.scrollIntoViewIfNeeded();
     await uiExpect(saveButton, 'Expected Moodle Save changes button to be visible.').toBeVisible();
     await saveButton.click();
     await this.waitForReady();
 
     await this.expectNoVisibleValidationErrors();
-    await this.expectSavedCurrentGrade(env.targetGrade);
+    await this.expectSavedCurrentGrade(grade);
   }
 
   private async expectAssignmentContext(assignmentName: string): Promise<void> {
     const heading = this.page.getByRole('heading', { name: this.textMatcher(assignmentName) }).first();
 
-    await uiExpect(heading, `Expected controlled assignment page heading to show "${assignmentName}".`).toBeVisible();
+    await uiExpect(heading, `Expected the assignment page heading to show "${assignmentName}".`).toBeVisible();
     await this.expectGradingSummaryVisible();
   }
 
@@ -100,7 +222,7 @@ export class AssignmentPage extends BasePage {
     const mainRegion = this.page.getByRole('main').first();
     const summaryRows = this.page.getByRole('rowgroup');
 
-    await uiExpect(mainRegion, 'Expected controlled assignment page to show the grading summary.').toContainText(
+    await uiExpect(mainRegion, 'Expected the assignment page to show the grading summary.').toContainText(
       'Grading summary'
     );
     await uiExpect(summaryRows, 'Expected grading summary to include participant count.').toContainText('Participants');
@@ -114,55 +236,51 @@ export class AssignmentPage extends BasePage {
     return this.page.getByRole('link', { name: /^Grade$/i }).first();
   }
 
-  private async expectDeterministicStudentVisible(env: TestEnv): Promise<void> {
-    if (!env.studentDisplayName) {
-      throw new Error('MOODLE_STUDENT_DISPLAY_NAME is required to assert the deterministic student identity.');
-    }
-
-    if (!env.studentEmail) {
-      throw new Error('MOODLE_STUDENT_EMAIL is required to assert the deterministic student identity.');
-    }
-
-    const studentPanel = this.studentInfoPanel(env.studentDisplayName);
+  private async expectStudentVisible(student: StudentIdentity): Promise<void> {
+    const studentPanel = this.studentInfoPanel(student.displayName);
 
     await uiExpect(
       studentPanel,
-      `Expected single-user grading interface to show student "${env.studentDisplayName}".`
+      `Expected single-user grading interface to show student "${student.displayName}".`
     ).toBeVisible();
-    await uiExpect(studentPanel, `Expected single-user grading interface to show "${env.studentEmail}".`).toContainText(
-      env.studentEmail
+    await uiExpect(studentPanel, `Expected single-user grading interface to show "${student.email}".`).toContainText(
+      student.email
     );
   }
 
-  private async expectSubmissionReadyForGrading(): Promise<void> {
+  private async expectSubmissionStatusReadyForGrading(submissionText: string): Promise<void> {
     const statusPanel = this.submissionStatusPanel();
 
     await uiExpect(statusPanel, 'Expected Moodle submission status panel to be visible.').toBeVisible();
     await uiExpect(statusPanel, 'Expected submitted-for-grading status.').toContainText(/Submitted for grading/i);
     await uiExpect(statusPanel, 'Expected not-graded status.').toContainText(/Not graded/i);
-    await uiExpect(
-      statusPanel,
-      'Expected deterministic submission text in the Moodle submission status panel.'
-    ).toContainText(deterministicSubmissionText);
+    await uiExpect(statusPanel, 'Expected the submitted text in the Moodle submission status panel.').toContainText(
+      submissionText
+    );
   }
 
-  private async expectCurrentGradeIsNotTarget(targetGrade: number): Promise<void> {
+  // A grade that is already there would make the save prove nothing.
+  private async expectCurrentGradeIsNot(grade: number): Promise<void> {
     const currentValue = await this.gradeInput().inputValue();
     const currentGrade = this.parseGrade(currentValue);
 
-    if (currentGrade === targetGrade) {
+    if (currentGrade === grade) {
       throw new Error(
-        `Controlled grading baseline is already ${targetGrade}. Run npm run moodle:seed:ready so the UI scenario proves a real grade write.`
+        `The grade is already ${grade} before the teacher enters it, so saving it would not prove a grade write.`
       );
     }
   }
 
-  private async expectSavedCurrentGrade(targetGrade: number): Promise<void> {
-    await uiExpect(this.currentGradeInGradebook(), 'Expected Moodle current grade field to be visible.').toBeVisible();
+  private async expectSavedCurrentGrade(grade: number): Promise<void> {
+    const expectedGrade = this.formattedGrade(grade);
+
+    await uiExpect(this.currentGradeInGradebook(), 'Expected Moodle current grade value to be visible.').toBeVisible();
+    // toHaveText with a string is an exact match after whitespace normalization, so 182.00 or 82.001
+    // cannot satisfy it.
     await uiExpect(
       this.currentGradeInGradebook(),
-      'Expected current grade in gradebook to match saved UI grade.'
-    ).toContainText(this.formattedGrade(targetGrade));
+      `Expected current grade in gradebook to equal saved UI grade ${expectedGrade}.`
+    ).toHaveText(expectedGrade);
   }
 
   private async expectNoVisibleValidationErrors(): Promise<void> {
@@ -173,11 +291,23 @@ export class AssignmentPage extends BasePage {
   }
 
   private studentInfoPanel(studentDisplayName: string): Locator {
-    return this.page.locator('[data-region="user-info"]').filter({ hasText: studentDisplayName }).first();
+    return this.page.locator(studentInfoSelector).filter({ hasText: studentDisplayName }).first();
   }
 
   private submissionStatusPanel(): Locator {
-    return this.page.locator(moodleSubmissionStatusPanelSelector).first();
+    return this.page.locator(submissionStatusPanelSelector).first();
+  }
+
+  private fatalError(): Locator {
+    return this.page.locator(fatalErrorSelector).first();
+  }
+
+  private fatalErrorMessage(): Locator {
+    return this.fatalError().locator('.errormessage');
+  }
+
+  private fatalErrorDocumentationLink(): Locator {
+    return this.fatalError().getByRole('link', { name: 'More information about this error' });
   }
 
   private gradeInput(): Locator {
@@ -188,8 +318,10 @@ export class AssignmentPage extends BasePage {
     return this.page.getByRole('button', { name: /^Save changes$/i }).first();
   }
 
+  // Moodle 5.0 grading form: the static "Current grade in gradebook" field renders only the value
+  // (a gradebook link reading "82.00" or "Not graded") in .currentgrade, apart from the field label.
   private currentGradeInGradebook(): Locator {
-    return this.page.locator('#fitem_id_currentgrade').first();
+    return this.page.locator('#fitem_id_currentgrade [data-name="currentgrade"] .currentgrade').first();
   }
 
   private visibleValidationErrors(): Locator {

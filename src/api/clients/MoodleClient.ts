@@ -1,6 +1,12 @@
 import type { TestEnv } from '../../support/env';
-import { validateEnvContract } from '../../support/env';
-import type { MoodleWebServiceRequest, MoodleWebServiceResponse } from '../models/moodle.types';
+import { isApiTokenConfigured, validateEnvContract } from '../../support/env';
+import type {
+  MoodleWebServiceException,
+  MoodleWebServiceRequest,
+  MoodleWebServiceResponse
+} from '../models/moodle.types';
+
+const responseSnippetLength = 200;
 
 export class MoodleClient {
   constructor(private readonly env: TestEnv) {}
@@ -14,7 +20,7 @@ export class MoodleClient {
   }
 
   get apiTokenConfigured(): boolean {
-    return this.env.apiToken.trim().length > 0;
+    return isApiTokenConfigured(this.env.apiToken);
   }
 
   async callWebService<T>(request: MoodleWebServiceRequest): Promise<MoodleWebServiceResponse<T>> {
@@ -48,15 +54,59 @@ export class MoodleClient {
       body
     });
 
-    const data = (await response.json()) as T;
+    const rawBody = await response.text();
+    const context = `Moodle Web Service ${request.functionName}`;
 
     if (!response.ok) {
-      throw new Error(`Moodle Web Service request failed with status ${response.status}.`);
+      throw new Error(this.redactToken(`${context} failed with HTTP ${response.status}: ${this.snippet(rawBody)}`));
+    }
+
+    let data: unknown;
+
+    try {
+      data = JSON.parse(rawBody);
+    } catch {
+      const contentType = response.headers.get('content-type') ?? 'unknown content type';
+      throw new Error(
+        this.redactToken(
+          `${context} returned a non-JSON response (HTTP ${response.status}, ${contentType}): ${this.snippet(rawBody)}`
+        )
+      );
+    }
+
+    // Moodle reports Web Service failures with HTTP 200 and an exception object in the body.
+    if (isMoodleWebServiceException(data)) {
+      const debugInfo = data.debuginfo ? ` (${data.debuginfo})` : '';
+      throw new Error(
+        this.redactToken(
+          `${context} failed with Moodle errorcode "${data.errorcode}": ${data.message ?? ''}${debugInfo}`
+        )
+      );
     }
 
     return {
       status: response.status,
-      data
+      data: data as T
     };
   }
+
+  private snippet(body: string): string {
+    const compact = body.replace(/\s+/g, ' ').trim();
+    return compact.length > responseSnippetLength
+      ? `${compact.slice(0, responseSnippetLength)}...`
+      : compact || '<empty body>';
+  }
+
+  private redactToken(message: string): string {
+    return message.split(this.env.apiToken).join('<redacted-token>');
+  }
+}
+
+function isMoodleWebServiceException(data: unknown): data is MoodleWebServiceException {
+  if (typeof data !== 'object' || data === null) {
+    return false;
+  }
+
+  const candidate = data as Record<string, unknown>;
+  return typeof candidate.exception === 'string' && typeof candidate.errorcode === 'string';
 }

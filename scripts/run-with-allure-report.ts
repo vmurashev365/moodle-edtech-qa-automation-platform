@@ -1,6 +1,8 @@
 import { spawn, spawnSync } from 'node:child_process';
 import path from 'node:path';
 
+import { readBooleanEnv } from '../src/support/env-values';
+
 const scriptName = process.argv[2];
 const forwardedArgs = process.argv.slice(3);
 const reportDir = path.resolve('reports', 'allure-report');
@@ -29,20 +31,10 @@ function runNpm(args: string[]): number {
   return result.status ?? 1;
 }
 
-function parseBooleanEnv(name: string, defaultValue: boolean): boolean {
-  const rawValue = process.env[name]?.trim().toLowerCase();
-
-  if (!rawValue) {
-    return defaultValue;
-  }
-
-  return !['0', 'false', 'no', 'off'].includes(rawValue);
-}
-
 function shouldAutoOpenReport(): boolean {
   const localDefault = process.env.CI !== 'true' && process.env.GITHUB_ACTIONS !== 'true';
 
-  return parseBooleanEnv('ALLURE_AUTO_OPEN', localDefault);
+  return readBooleanEnv(process.env, 'ALLURE_AUTO_OPEN') ?? localDefault;
 }
 
 function openAllureReport(): void {

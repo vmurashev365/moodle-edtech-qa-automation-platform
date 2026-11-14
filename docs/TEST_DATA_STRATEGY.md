@@ -106,7 +106,7 @@ Recommended controls:
 - Prefer API setup over UI setup for speed and reliability.
 - Track created records in scenario context during implementation.
 - Clean up even when the UI scenario fails.
-- Reset grades and submissions to known baseline before scenarios that mutate them.
+- Reset grades and submissions to known baseline before scenarios that mutate them. Implemented for a student's grade by the step `Given student "…" has an ungraded submission for "…"`, which runs a lightweight reset script instead of the full seed and verifies the result.
 - Avoid hardcoded assumptions that are not verified in setup.
 - Keep Mount Orange recon data out of automated runs and evidence claims.
 
@@ -157,10 +157,11 @@ The seed runs inside the Docker Moodle container and uses Moodle internal APIs f
 - `Essay: Test Automation Strategy`
 - deterministic student submission
 - Student QA grade reset to Moodle's ungraded baseline through the assign grading API
+- Moodle user tours disabled, so first-visit overlays cannot block click navigation
 - teacher and student enrolments in the controlled course
 - generated local `.env` values for course, assignment, student ID, student email, submission ID, submissions URL, single-user grading URL, gradebook URL, student display name, and target grade
 
-The seed writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`. `npm run moodle:seed:env` explicitly applies deterministic metadata from the generated `envSnippet` to the untracked local `.env`, creating `.env` from `.env.example` if needed and creating a timestamped `.env.backup.*` before editing an existing file. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance. That generated artifact is useful for local setup and review, but it is not public proof by itself. The Phase 5 workflow reviews the deterministic submission from the teacher perspective. The Phase 6 workflow writes the target grade through the Moodle UI and verifies the gradebook row. Backend validation through Moodle Web Services remains future work.
+The seed writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`. `npm run moodle:seed:env` explicitly applies deterministic metadata from the generated `envSnippet` to the untracked local `.env`, creating `.env` from `.env.example` if needed and creating a timestamped `.env.backup.*` before editing an existing file. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance. That generated artifact is useful for local setup and review, but it is not public proof by itself. The Phase 5 workflow reviews the deterministic submission from the teacher perspective. The Phase 6 workflow writes the target grade through the Moodle UI, verifies the gradebook row and reads the stored grade back through a read-only Moodle CLI script. Backend validation through Moodle Web Services remains future work.
 
 ## Phase 6 Grading / Gradebook Readiness
 
@@ -171,7 +172,7 @@ Phase 6 targets the business-critical teacher grading and gradebook reconciliati
 - configured gradebook URL or course ID
 - assignment grade scale that accepts the configured target grade, default `82`
 - generated single-user grading URL for Student QA
-- seed-reset ungraded baseline before each grading run
+- ungraded baseline restored and verified at the start of each grade-dependent scenario by `Given student "…" has an ungraded submission for "…"`
 
 Use `npm run moodle:seed:ready` before attempting the grading workflow. The seed creates the deterministic submission and resets the grade to Moodle's ungraded baseline; it does not pre-grade with the target grade. Mission 6 Recorder/Codegen selector evidence is local under ignored `tools/recordings/localhost_mission6`.
 

@@ -65,6 +65,8 @@ require_once($CFG->dirroot . '/course/modlib.php');
 require_once($CFG->dirroot . '/enrol/manual/locallib.php');
 require_once($CFG->dirroot . '/mod/assign/lib.php');
 require_once($CFG->dirroot . '/mod/assign/locallib.php');
+require_once($CFG->libdir . '/gradelib.php');
+require_once(__DIR__ . '/lib/grade-baseline.php');
 
 $requestedbaseurl = seed_env('MOODLE_BASE_URL', 'http://localhost:8080');
 $baseurl = !empty($CFG->wwwroot) ? (string) $CFG->wwwroot : $requestedbaseurl;
@@ -76,7 +78,14 @@ $studentdisplayname = seed_env('MOODLE_STUDENT_DISPLAY_NAME', 'Student QA');
 $studentemail = seed_env('MOODLE_STUDENT_EMAIL', 'student.qa@example.test');
 $coursename = seed_env('MOODLE_COURSE_NAME', 'QA Automation Demo 101');
 $assignmentname = seed_env('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy');
-$targetgrade = (int) seed_env('MOODLE_TARGET_GRADE', '82');
+$rawtargetgrade = seed_env('MOODLE_TARGET_GRADE', '82');
+
+// Matches the TypeScript contract: whole-number grades within the assignment's maximum grade of 100.
+if (!preg_match('/^(100|[1-9]?[0-9])$/', $rawtargetgrade)) {
+    seed_fail("MOODLE_TARGET_GRADE must be an integer from 0 to 100; received \"{$rawtargetgrade}\".");
+}
+
+$targetgrade = (int) $rawtargetgrade;
 $courseshortname = 'QA101';
 $courseidnumber = 'qa-automation-demo-101';
 $submissiontext = 'This is a deterministic QA automation strategy submission for the Moodle EdTech demo.';
@@ -93,6 +102,12 @@ try {
 
     if (seed_ensure_manual_auth_enabled()) {
         $notes[] = 'Manual authentication was enabled for local controlled Moodle users.';
+    }
+
+    $disabledtours = seed_disable_user_tours();
+
+    if ($disabledtours > 0) {
+        $notes[] = "Disabled {$disabledtours} Moodle user tour(s); their first-visit overlays block click navigation.";
     }
 
     [$studentfirstname, $studentlastname] = seed_split_display_name($studentdisplayname);
@@ -120,7 +135,8 @@ try {
 
     $assignment = seed_upsert_assignment($course, $assignmentname);
     $assignment['submission'] = seed_ensure_online_text_submission($course, $assignment['cm'], $student, $submissiontext);
-    $gradebaseline = seed_reset_grade_to_ungraded($course, $assignment['cm'], $student);
+    $gradebaseline = qa_reset_grade_to_ungraded($course, $assignment['cm'], $student);
+    $gradeitem = seed_assignment_grade_item($course, $assignment['assign']);
 
     $courseurl = seed_build_url($baseurl, "/course/view.php?id={$course->id}");
     $assignmenturl = seed_build_url($baseurl, "/mod/assign/view.php?id={$assignment['cm']->id}");
@@ -168,12 +184,14 @@ try {
         ],
         'gradebook' => [
             'url' => $gradebookurl,
+            'gradeItemId' => (int) $gradeitem->id,
             'targetGrade' => $targetgrade,
             'baseline' => $gradebaseline,
         ],
         'envSnippet' => [
             'MOODLE_COURSE_ID' => (string) $course->id,
             'MOODLE_ASSIGNMENT_ID' => (string) $assignment['cm']->id,
+            'MOODLE_ASSIGNMENT_GRADE_ITEM_ID' => (string) $gradeitem->id,
             'MOODLE_STUDENT_ID' => (string) $student->id,
             'MOODLE_STUDENT_EMAIL' => $student->email,
             'MOODLE_SUBMISSION_ID' => (string) $assignment['submission']->id,
@@ -214,6 +232,24 @@ function seed_ensure_manual_auth_enabled(): bool {
     $CFG->auth = $authsequence;
 
     return true;
+}
+
+// User tours open on a user's first visit to the dashboard, My courses, course and gradebook pages.
+// Whether a tour shows depends on per-user history, and its backdrop intercepts clicks, so the
+// controlled instance keeps them off.
+function seed_disable_user_tours(): int {
+    global $DB;
+
+    $disabled = 0;
+
+    foreach ($DB->get_records('tool_usertours_tours', ['enabled' => 1]) as $record) {
+        $tour = \tool_usertours\tour::load_from_record($record);
+        $tour->set_enabled(false);
+        $tour->persist();
+        $disabled++;
+    }
+
+    return $disabled;
 }
 
 function seed_upsert_user(string $username, string $firstname, string $lastname, string $email, string $password): stdClass {
@@ -412,6 +448,22 @@ function seed_upsert_assignment(stdClass $course, string $assignmentname): array
     ];
 }
 
+function seed_assignment_grade_item(stdClass $course, stdClass $assign): grade_item {
+    $gradeitem = grade_item::fetch([
+        'courseid' => $course->id,
+        'itemtype' => 'mod',
+        'itemmodule' => 'assign',
+        'iteminstance' => $assign->id,
+        'itemnumber' => 0,
+    ]);
+
+    if (!$gradeitem) {
+        seed_fail("Could not find the gradebook item for assignment {$assign->name}.");
+    }
+
+    return $gradeitem;
+}
+
 function seed_add_module(stdClass $data, stdClass $course): stdClass {
     if (function_exists('create_module')) {
         $createfunction = new ReflectionFunction('create_module');
@@ -476,42 +528,4 @@ function seed_ensure_online_text_submission(
 
     $submission = $assignment->get_user_submission($student->id, false);
     return $submission;
-}
-
-function seed_reset_grade_to_ungraded(stdClass $course, stdClass $cm, stdClass $student): array {
-    global $USER;
-
-    $admin = $USER;
-    $context = context_module::instance($cm->id);
-    $assignment = new assign($context, $cm, $course);
-
-    // Prefer Moodle's assign grading API over deleting grade rows; it keeps assign_grades and gradebook state aligned.
-    $data = (object) [
-        'grade' => '-1',
-        'attemptnumber' => -1,
-        'addattempt' => 0,
-        'sendstudentnotifications' => false,
-        'assignfeedbackcomments_editor' => [
-            'text' => '',
-            'format' => FORMAT_HTML,
-            'itemid' => 0,
-        ],
-    ];
-
-    $assignment->save_grade((int) $student->id, $data);
-
-    $assignrecord = clone $assignment->get_instance();
-    $assignrecord->cmidnumber = $cm->idnumber;
-    assign_update_grades($assignrecord, (int) $student->id);
-
-    \core\session\manager::set_user($admin);
-    $USER = $admin;
-
-    $grade = $assignment->get_user_grade((int) $student->id, true);
-
-    return [
-        'mode' => 'ungraded',
-        'assignGrade' => (float) $grade->grade,
-        'expectedBeforeUiGrade' => 'not graded',
-    ];
 }

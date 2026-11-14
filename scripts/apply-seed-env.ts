@@ -1,6 +1,8 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { localDemoUserPassword } from '../src/support/demo-credentials';
+import { seedArtifactPath } from '../src/support/entity-registry';
 import { logger } from '../src/utils/logger';
 
 interface SeedArtifact {
@@ -33,6 +35,7 @@ interface SeedArtifact {
   };
   gradebook?: {
     url?: string;
+    gradeItemId?: number | string;
     targetGrade?: number | string;
   };
   envSnippet?: Record<string, string>;
@@ -44,10 +47,8 @@ interface EnvLine {
   value?: string;
 }
 
-const seedArtifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
 const envPath = path.resolve('.env');
 const envExamplePath = path.resolve('.env.example');
-const localDemoPassword = 'QaDemo2026!';
 
 const deterministicKeys = [
   'MOODLE_BASE_URL',
@@ -59,6 +60,7 @@ const deterministicKeys = [
   'MOODLE_COURSE_URL',
   'MOODLE_ASSIGNMENT_NAME',
   'MOODLE_ASSIGNMENT_ID',
+  'MOODLE_ASSIGNMENT_GRADE_ITEM_ID',
   'MOODLE_STUDENT_ID',
   'MOODLE_STUDENT_EMAIL',
   'MOODLE_SUBMISSION_ID',
@@ -129,6 +131,7 @@ function requireValue(seed: SeedArtifact, key: string): string {
     MOODLE_COURSE_URL: seed.course?.url,
     MOODLE_ASSIGNMENT_NAME: seed.assignment?.name,
     MOODLE_ASSIGNMENT_ID: seed.assignment?.cmid,
+    MOODLE_ASSIGNMENT_GRADE_ITEM_ID: seed.gradebook?.gradeItemId,
     MOODLE_STUDENT_ID: seed.users?.student?.id,
     MOODLE_STUDENT_EMAIL: seed.users?.student?.email,
     MOODLE_SUBMISSION_ID: seed.submission?.id,
@@ -243,7 +246,7 @@ function applySeedEnv(): void {
       continue;
     }
 
-    const result = setEnvValue(lines, key, localDemoPassword);
+    const result = setEnvValue(lines, key, localDemoUserPassword);
 
     if (result.action !== 'unchanged') {
       changedKeys.push(key);
@@ -268,7 +271,7 @@ function applySeedEnv(): void {
 
   if (demoPasswordKeys.length > 0) {
     logger.warn(
-      `${demoPasswordKeys.join(', ')} were blank and were set to the documented local-only demo password "${localDemoPassword}".`
+      `${demoPasswordKeys.join(', ')} were blank and were set to the documented local-only demo password "${localDemoUserPassword}".`
     );
   }
 

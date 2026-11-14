@@ -6,7 +6,7 @@ This repository is a documentation-first, portfolio-style QA automation referenc
 
 ## Phase 3 status
 
-Phase 3 adds the first executable automation skeleton: Cucumber, Playwright, TypeScript, tagged feature files, typed support code, UI-MAP/Page Object placeholders, API helper skeletons, Docker compose for a local controlled Moodle stack, and CI validation.
+Phase 3 adds the first executable automation skeleton: Cucumber, Playwright, TypeScript, tagged feature files, typed support code, Page Object placeholders, API helper skeletons, Docker compose for a local controlled Moodle stack, and CI validation.
 
 Most Moodle UI workflows are still tagged `@wip` until selectors and Moodle Web Services are verified against the controlled instance. The skeleton does not claim that full E2E/API/UI coverage is implemented yet.
 
@@ -16,8 +16,8 @@ Phase 4 adds the first real local controlled-Moodle smoke path:
 
 - start Moodle with Docker Compose
 - wait until the local Moodle URL is reachable
-- open the controlled Moodle login page
-- assert the login form is visible
+- a visitor opens the login page
+- the sign-in form (username, password, log in) is available
 
 Teacher/student users, course, assignment, submission, and grade still require controlled seed data before deeper workflows can pass.
 
@@ -25,13 +25,14 @@ Teacher/student users, course, assignment, submission, and grade still require c
 
 Phase 5 adds the first teacher-facing local workflow path:
 
-- verify the controlled Moodle instance is reachable
-- verify the local Phase 5 data contract is configured
-- log in as the configured teacher
-- open the controlled course
-- open the controlled assignment
-- open the submissions view
-- assert the deterministic student submission is visible
+- sign in as teacher `teacher.qa` and confirm the user menu belongs to that teacher
+- reset the grade of `student.qa`'s submission and confirm through the Moodle CLI that it is not graded
+- click "My courses" in the main menu of the Dashboard, then the course
+- click the assignment on the course page
+- click the assignment's `Grade` action, which opens Moodle's single-user grading interface
+- compare Student QA's name and email, the `Submitted for grading` and `Not graded` statuses and the submitted text with what the grading page shows
+
+Phase 5 navigates only by clicks, so it covers the real teacher path. Phase 6 opens the grading interface and gradebook by direct links built from the seed artifact, so the two scenarios complement each other.
 
 Data setup now uses the local seed command below. Phase 6 adds the first real grading and gradebook reconciliation path for the same controlled assignment.
 
@@ -43,6 +44,7 @@ The deterministic local Moodle seed command:
 - uses Moodle internal APIs for users, course creation, manual enrolment, assignment creation/update, and online text submission setup
 - creates or updates `teacher.qa`, `student.qa`, `QA Automation Demo 101`, `Essay: Test Automation Strategy`, enrolments, and the deterministic student submission
 - resets the Student QA assignment grade to Moodle's ungraded baseline through the assign grading API before the UI grading scenario writes the target grade
+- disables Moodle user tours, whose first-visit overlays depend on per-user history and block clicks
 - writes generated course, assignment, student, submission, submissions, and gradebook IDs/URLs to a local seed artifact
 - applies generated IDs and URLs to the untracked local `.env` with `npm run moodle:seed:env`
 - writes ignored local metadata to `artifacts/seed/controlled-data.generated.json`
@@ -51,15 +53,17 @@ The deterministic local Moodle seed command:
 
 ## Phase 6 grading and gradebook status
 
-Phase 6 implements one deterministic local UI scenario:
+Phase 6 implements one deterministic local scenario, "A grade saved by the teacher reaches the gradebook unchanged". The teacher, student, assignment, course and grade are named in the scenario; the steps look the names up in the seed artifact (`artifacts/seed/controlled-data.generated.json`), so an unknown name fails by name.
 
-- log in as `teacher.qa`
-- open the generated single-user grading URL for Student QA
-- enter `MOODLE_TARGET_GRADE`, default `82`
-- save through Moodle's grading UI
-- open the gradebook and verify the `#fixed_user_<MOODLE_STUDENT_ID>` row contains `Student QA`, `student.qa@example.test`, and `82.00`
+- sign in as teacher `teacher.qa` and confirm the user menu belongs to that teacher
+- reset the grade of `student.qa`'s submission and confirm through the Moodle CLI that it is not graded
+- open the single-user grading interface for that submission, enter `82` and save through Moodle's grading UI
+- open the gradebook, verify the student's row shows `Student QA` and `student.qa@example.test`, and verify the cell where that row meets the assignment's column equals `82.00` exactly
+- reconcile with the backend: a read-only Moodle CLI script (`scripts/moodle/read-grade-state.php`) must report the assignment grade and the gradebook grade as `82` and the gradebook state as `graded`
 
-Mission 6 Recorder/Codegen evidence was captured locally under ignored `tools/recordings/localhost_mission6`. The implemented scenario is evidence only when `npm run moodle:seed:ready` followed by `npm run test:local:grading` passes. API coverage remains preflight/helper-level until Moodle Web Services are configured.
+Each check attaches a comparison record under its step in the report, on passing runs too: the rule, and for every compared value its source, the expected value, the actual value and the result. The step asserts from that same record.
+
+Mission 6 Recorder/Codegen evidence was captured locally under ignored `tools/recordings/localhost_mission6`. The implemented scenario is evidence only when `npm run moodle:seed:ready` followed by `npm run test:local:grading` passes. The backend check runs through the Moodle CLI in the container, not Web Services; API coverage remains preflight/helper-level until Moodle Web Services are configured.
 
 ## Current Status
 
@@ -69,19 +73,19 @@ Implemented:
 - controlled Moodle login-page smoke
 - Phase 5 submission-review foundation with controlled seed readiness checks
 - local controlled Moodle seed and safe `.env` sync commands
-- Phase 6 local teacher grading plus gradebook row verification
+- Phase 6 local teacher grading plus gradebook row verification and Moodle CLI backend reconciliation of the stored grade
+- Phase 7 local role-negative check: a signed-in student is refused Moodle's single-user grading interface and its grading service, and the stored grade stays not graded (Moodle CLI check)
 - demo and fast execution profiles for local review and CI-safe runs
 - Playwright Trace Viewer zip capture for failed Cucumber browser scenarios when `MOODLE_TRACE_MODE=retain-on-failure`
 
 Blocked / WIP:
 
 - broader API-backed grade reset/reconciliation through Moodle Web Services
-- security, media, and role-negative workflows beyond existing skeleton coverage
+- media workflows, and role-negative checks for teacher-only pages other than the single-user grading interface
 
 Planned:
 
 - API-backed reset and backend validation
-- role negative test
 - audio/media test
 - public Allure report and demo video
 
@@ -96,9 +100,9 @@ Planned:
 
 ## Controlled Moodle instance approach
 
-Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. Mount Orange Moodle demo is recon-only and must not be used as the CI target.
+Tests are intended to run against a controlled Moodle instance (local Docker or dedicated VPS) seeded with deterministic test data to ensure repeatability and traceability. The local Docker stack pins the Moodle image by digest to Moodle 5.0.1 (Build: 20250609). Mount Orange Moodle demo is recon-only and must not be used as the CI target.
 
-The local Docker Compose file uses configurable Moodle and database image variables. The default images are intended for local portfolio validation only; pin or mirror approved images before treating the stack as long-lived infrastructure.
+The image names come from `MOODLE_DOCKER_IMAGE` and `MARIADB_DOCKER_IMAGE`; their defaults in `docker-compose.yml` and `.env.example` are the Moodle digest above and the `bitnamilegacy/mariadb:11.4` tag. A local `.env` that still sets `MOODLE_DOCKER_IMAGE=bitnamilegacy/moodle:latest` overrides the pin. Mirror the images before treating the stack as long-lived infrastructure.
 
 ## Planned user roles
 
@@ -180,7 +184,7 @@ npm run test:local:grading
 npm run moodle:stop
 ```
 
-`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only and guarded against selecting zero scenarios.
+`check:local:grading-readiness` validates only the local grading data contract. `test:local:grading` is local-only. Every executable `test:*` command except `test:wip` fails when it selects zero scenarios, and says so when all matching scenarios are tagged `@wip`.
 
 ## Demo and fast execution profiles
 
@@ -215,7 +219,7 @@ npm run test:fast:api
 ```
 
 Demo videos are written under ignored `videos/`, traces under ignored `traces/`, screenshots under ignored `screenshots/`, and local reports under ignored `reports/`.
-Teacher-workflow and grading demo/fast scripts run the seed readiness path before the scenario so they stay repeatable after a previous grading run.
+Scenarios that depend on the grading state say so with `Given student "…" has an ungraded submission for "…"`. That step resets the student's grade to "not graded" through `scripts/moodle/reset-ungraded-baseline.php` and verifies the result in Moodle's records, so the scenarios pass in any execution order and on repeated runs without re-seeding. The step fails the scenario if Docker or the Moodle container is unavailable or the reset does not take effect.
 The demo screencast commands force a headed local browser, use slower presentation pacing, record Playwright video with click target highlighting, regenerate the Allure HTML evidence package, and open the local Allure viewer automatically after the Cucumber run. GitHub Actions may still set `MOODLE_HEADLESS=true` for artifact-only screencast evidence. Set `ALLURE_AUTO_OPEN=false` to generate the report without launching the viewer.
 
 Generate an Allure HTML evidence package while preserving the test exit code:
@@ -235,6 +239,7 @@ Validate the skeleton:
 npm run type-check
 npm run lint
 npm run format:check
+npm run test:unit
 npm run verify:env
 npm run test:api
 ```
@@ -249,7 +254,7 @@ npm run test:wip
 
 GitHub Actions currently validates the framework skeleton, type safety, lint/type validation, environment contract, and safe API preflight only. It does not start Moodle or depend on a public demo instance.
 
-The separate **Manual Moodle Test Run** workflow can be launched from the GitHub Actions UI or mobile app. It supports `fast-api`, `local-smoke`, `local-teacher-workflow`, `local-grading`, and `local-demo-screencast-all`, uploads the Allure/Cucumber evidence artifacts, and can send a short stakeholder email digest when SMTP secrets are configured.
+The separate **Manual Moodle Test Run** workflow is dispatch-only and can be launched from the GitHub Actions UI or mobile app. It starts a fresh controlled Moodle stack and supports `fast-api`, `local-smoke`, `local-teacher-workflow`, `local-grading`, `local-security`, `local-all` (every implemented local scenario, headless) and `local-demo-screencast-all`. The `iterations` input (1–5) reruns the suite on the same stack: iteration 1 seeds, later iterations rely on the Given step that resets a submission to ungraded, and any failing iteration fails the job. The Allure report and the job summary list every iteration separately, together with the Moodle release, version and image digest read from the running container. The workflow uploads the Allure/Cucumber evidence artifacts (14 days) and can send a short stakeholder email digest when SMTP secrets are configured. With `publish_release=true` and every iteration passed, it publishes the evidence as a GitHub prerelease (tag `evidence-<run id>-<attempt>`): a single-file Allure report that opens offline, Cucumber JSON per iteration, an environment summary and, for the screencast suite, the videos. A secret guard scans every asset for the job's credential values first and refuses to publish on any match. Releases are visible to repository collaborators only. See [Test Execution Procedure](docs/TEST_EXECUTION_PROCEDURE.md#manual-github-actions-workflow).
 
 Failed Cucumber browser scenarios save Playwright traces under ignored `traces/` by default (`MOODLE_TRACE_MODE=retain-on-failure`) and attach the trace zip to the Cucumber/Allure result where reporter plumbing supports attachments. Use `MOODLE_TRACE_MODE=off` to disable traces or `MOODLE_TRACE_MODE=on`/`all` to retain traces for passing scenarios too.
 
@@ -267,7 +272,7 @@ Teacher workflows (assignment lifecycle, grading, gradebook reconciliation) are 
 
 ## Reusable BDD Lego Steps (business/team value)
 
-New scenarios can be composed from existing approved Lego Steps without changing automation code. Senior QA Architect extends the step library when new domain behavior appears.
+New scenarios can be composed from existing approved Lego Steps without changing automation code. Senior QA Architect extends the step library when new domain behavior appears. The Lego Steps are one layer of domain steps: a quoted name in a step is looked up in the seeded data, and each checking step leaves a comparison record in the report ([BDD Architecture](docs/BDD_ARCHITECTURE.md)).
 
 This encourages consistent vocabulary across Product, Manual QA and Automation while keeping the automation implementation manageable and reviewable. It does not mean that non-technical users can create automated tests without engineering support—engineering implements and reviews the approved Lego Steps.
 
@@ -276,7 +281,6 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
 ```text
 / (repo root)
   README.md
-  AGENTS.md
   package.json
   cucumber.js
   playwright.config.ts
@@ -299,7 +303,7 @@ This encourages consistent vocabulary across Product, Manual QA and Automation w
   test-data/           (seed data, fixtures/factories — phase 3)
 ```
 
-Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission review, and Phase 6 local grading/gradebook scenario remain skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report link remains TBD until a controlled Moodle run is published. The Docker image defaults remain configurable; pinning the Moodle image is deferred until the seeded local workflow is proven against a specific version.
+Note: UI and E2E workflows beyond the Phase 4 smoke, Phase 5 teacher submission review, and Phase 6 local grading/gradebook scenario remain skeleton-level and tagged `@wip` where implementation requires controlled Moodle selector/API verification. Allure report links are published as evidence releases and listed in [Evidence Index](docs/EVIDENCE_INDEX.md#controlled-moodle-evidence-releases); they remain TBD until real runs are published.
 
 ---
 

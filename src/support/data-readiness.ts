@@ -1,5 +1,5 @@
 import type { TestEnv } from './env';
-import { loadEnv } from './env';
+import { isApiTokenConfigured, loadEnv } from './env';
 
 export interface ControlledDataReadinessResult {
   ok: boolean;
@@ -158,7 +158,7 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
     );
   }
 
-  if (!hasValue(env.apiToken)) {
+  if (!isApiTokenConfigured(env.apiToken)) {
     warnings.push('MOODLE_API_TOKEN is not configured; Phase 5 seed validation is UI/manual only.');
   }
 
@@ -176,7 +176,7 @@ export function validateControlledDataReadiness(env: TestEnv = loadEnv()): Contr
       submissionsDirectNavigationReady: Boolean(submissionsUrl),
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       studentSearchTermCount: studentTerms.length,
-      apiTokenConfigured: Boolean(env.apiToken)
+      apiTokenConfigured: isApiTokenConfigured(env.apiToken)
     }
   };
 }
@@ -207,10 +207,6 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     );
   }
 
-  if (!Number.isFinite(env.targetGrade)) {
-    errors.push('MOODLE_TARGET_GRADE must be numeric before running Phase 6 grading.');
-  }
-
   if (!hasValue(env.studentId)) {
     errors.push('MOODLE_STUDENT_ID is required before running Phase 6 gradebook row validation.');
   }
@@ -219,8 +215,14 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
     errors.push('MOODLE_STUDENT_EMAIL is required before running Phase 6 gradebook row validation.');
   }
 
-  if (!hasValue(env.apiToken)) {
-    warnings.push('API-backed grade verification is not configured; Phase 6 remains UI/manual-seed only.');
+  if (!hasValue(env.assignmentGradeItemId)) {
+    errors.push('MOODLE_ASSIGNMENT_GRADE_ITEM_ID is required before running Phase 6 gradebook cell validation.');
+  }
+
+  if (!isApiTokenConfigured(env.apiToken)) {
+    warnings.push(
+      'MOODLE_API_TOKEN is not configured; Phase 6 verifies the grade through the UI and the Moodle CLI, not Web Services.'
+    );
   }
 
   return {
@@ -233,6 +235,7 @@ export function validateControlledGradingReadiness(env: TestEnv = loadEnv()): Co
       assignmentGradingNavigationReady: Boolean(gradingUrl),
       gradebookNavigationReady: Boolean(gradebookUrl),
       studentEmailConfigured: Boolean(env.studentEmail),
+      assignmentGradeItemConfigured: Boolean(env.assignmentGradeItemId),
       targetGrade: env.targetGrade
     }
   };

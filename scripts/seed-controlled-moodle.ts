@@ -1,8 +1,10 @@
-import { spawnSync } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { localDemoUserPassword } from '../src/support/demo-credentials';
+import { seedArtifactPath as artifactPath } from '../src/support/entity-registry';
 import { loadEnv } from '../src/support/env';
+import { requireDocker, requireRunningMoodleService, runMoodleCliScript } from '../src/support/moodle-cli';
 import { logger } from '../src/utils/logger';
 
 interface SeedUserOutput {
@@ -42,6 +44,7 @@ interface SeedOutput {
   };
   gradebook: {
     url: string;
+    gradeItemId: number;
     targetGrade: number;
     baseline: {
       mode: string;
@@ -53,112 +56,24 @@ interface SeedOutput {
   notes: string[];
 }
 
-interface CommandResult {
-  status: number | null;
-  stdout: string;
-  stderr: string;
-  error?: Error;
-}
-
-const moodleServiceName = 'moodle';
 const seedScriptPath = '/qa-seed/seed-controlled-data.php';
-const artifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
-const localDemoPassword = 'QaDemo2026!';
+const seedTimeoutMs = 300_000;
 
-function runCommand(command: string, args: string[], options: { allowFailure?: boolean } = {}): CommandResult {
-  const result = spawnSync(command, args, {
-    encoding: 'utf8',
-    windowsHide: true
-  });
-
-  const commandResult: CommandResult = {
-    status: result.status,
-    stdout: result.stdout ?? '',
-    stderr: result.stderr ?? '',
-    error: result.error
-  };
-
-  if (!options.allowFailure && (result.error || result.status !== 0)) {
-    throw new Error(formatCommandFailure(command, args, commandResult));
-  }
-
-  return commandResult;
-}
-
-function formatCommandFailure(command: string, args: string[], result: CommandResult): string {
-  const commandLine = [command, ...args].join(' ');
-  const details = [
-    `Command failed: ${commandLine}`,
-    result.status === null ? undefined : `Exit code: ${result.status}`,
-    result.error ? `Error: ${result.error.message}` : undefined,
-    result.stderr.trim() ? `stderr: ${result.stderr.trim()}` : undefined,
-    result.stdout.trim() ? `stdout: ${result.stdout.trim()}` : undefined
-  ].filter(Boolean);
-
-  return details.join('\n');
-}
-
-function requireDocker(): void {
-  runCommand('docker', ['--version']);
-  runCommand('docker', ['compose', 'version']);
-}
-
-function requireRunningMoodleService(): void {
-  const result = runCommand('docker', ['compose', 'ps', '--status', 'running', '--services']);
-  const services = result.stdout
-    .split(/\r?\n/)
-    .map((service) => service.trim())
-    .filter(Boolean);
-
-  if (!services.includes(moodleServiceName)) {
-    throw new Error(
-      [
-        `Docker Compose service "${moodleServiceName}" is not running.`,
-        'Start the local controlled Moodle stack first:',
-        '  npm run moodle:start',
-        '  npm run moodle:wait'
-      ].join('\n')
-    );
-  }
-}
-
-function asSeedEnv(name: string, value: string | number): string {
-  return `${name}=${String(value)}`;
-}
-
-function buildSeedEnvArgs(): string[] {
+function buildSeedEnv(): Record<string, string> {
   const env = loadEnv();
-  const teacherPassword = seedPassword(env.teacherPassword);
-  const studentPassword = seedPassword(env.studentPassword);
-  const studentDisplayName = env.studentDisplayName || 'Student QA';
-  const studentEmail = env.studentEmail || 'student.qa@example.test';
 
-  return [
-    '-e',
-    asSeedEnv('MOODLE_BASE_URL', env.baseUrl),
-    '-e',
-    asSeedEnv('MOODLE_TEACHER_USERNAME', env.teacherUsername),
-    '-e',
-    asSeedEnv('MOODLE_TEACHER_PASSWORD', teacherPassword),
-    '-e',
-    asSeedEnv('MOODLE_STUDENT_USERNAME', env.studentUsername),
-    '-e',
-    asSeedEnv('MOODLE_STUDENT_PASSWORD', studentPassword),
-    '-e',
-    asSeedEnv('MOODLE_STUDENT_DISPLAY_NAME', studentDisplayName),
-    '-e',
-    asSeedEnv('MOODLE_STUDENT_EMAIL', studentEmail),
-    '-e',
-    asSeedEnv('MOODLE_COURSE_NAME', env.courseName),
-    '-e',
-    asSeedEnv('MOODLE_ASSIGNMENT_NAME', env.assignmentName),
-    '-e',
-    asSeedEnv('MOODLE_TARGET_GRADE', env.targetGrade)
-  ];
-}
-
-function seedPassword(value: string): string {
-  return value && value !== 'changeme' ? value : localDemoPassword;
+  return {
+    MOODLE_BASE_URL: env.baseUrl,
+    MOODLE_TEACHER_USERNAME: env.teacherUsername,
+    MOODLE_TEACHER_PASSWORD: env.teacherPassword,
+    MOODLE_STUDENT_USERNAME: env.studentUsername,
+    MOODLE_STUDENT_PASSWORD: env.studentPassword,
+    MOODLE_STUDENT_DISPLAY_NAME: env.studentDisplayName || 'Student QA',
+    MOODLE_STUDENT_EMAIL: env.studentEmail || 'student.qa@example.test',
+    MOODLE_COURSE_NAME: env.courseName,
+    MOODLE_ASSIGNMENT_NAME: env.assignmentName,
+    MOODLE_TARGET_GRADE: String(env.targetGrade)
+  };
 }
 
 function parseSeedOutput(stdout: string): SeedOutput {
@@ -193,6 +108,7 @@ function printSummary(seedOutput: SeedOutput): void {
   logger.info(`Submissions URL: ${seedOutput.assignment.submissionsUrl}`);
   logger.info(`Assignment grading URL: ${seedOutput.assignment.gradingUrl}`);
   logger.info(`Gradebook URL: ${seedOutput.gradebook.url}`);
+  logger.info(`Assignment grade item ID: ${seedOutput.gradebook.gradeItemId}`);
   logger.info(`Seeded grade baseline: ${seedOutput.gradebook.baseline.expectedBeforeUiGrade}`);
   logger.info(`Target grade: ${seedOutput.gradebook.targetGrade}`);
   logger.info(`Generated Moodle metadata has been written to: ${artifactPath}`);
@@ -216,13 +132,17 @@ function printSummary(seedOutput: SeedOutput): void {
   console.log('  npm run check:grading-data');
   console.log('');
   console.log(
-    `Credential note: teacher/student passwords come from your local env; blank or legacy placeholder values are seeded with the local demo default "${localDemoPassword}".`
+    `Credential note: teacher/student passwords come from your local env; blank or legacy placeholder values are seeded with the local demo default "${localDemoUserPassword}".`
   );
 }
 
 function runSeed(): SeedOutput {
-  const args = ['compose', 'exec', '-T', ...buildSeedEnvArgs(), moodleServiceName, 'php', seedScriptPath];
-  const result = runCommand('docker', args);
+  const result = runMoodleCliScript(seedScriptPath, {
+    env: buildSeedEnv(),
+    secretEnvNames: ['MOODLE_TEACHER_PASSWORD', 'MOODLE_STUDENT_PASSWORD'],
+    // The first seed on a fresh stack also warms Moodle caches and builds the course.
+    timeoutMs: seedTimeoutMs
+  });
 
   if (result.stderr.trim()) {
     logger.warn(result.stderr.trim());

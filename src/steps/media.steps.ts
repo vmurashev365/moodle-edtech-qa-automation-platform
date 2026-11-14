@@ -1,5 +1,5 @@
 import { Then, When } from '@cucumber/cucumber';
-import { pendingImplementation } from '../../utils/assertions';
+import { pendingImplementation } from '../utils/assertions';
 
 When('the student opens audio resource {string}', async function (resourceName: string) {
   void resourceName;

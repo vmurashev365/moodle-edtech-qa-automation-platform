@@ -38,7 +38,7 @@ export default [
       'playwright-report/',
       'coverage/',
       'tools/',
-      '_reference_*/'
+      '.local/'
     ]
   },
   {
@@ -59,6 +59,13 @@ export default [
       'playwright/no-element-handle': 'warn',
       'playwright/no-page-pause': 'error',
       'playwright/no-wait-for-timeout': 'error'
+    }
+  },
+  {
+    // node:test's describe() and it() return promises that the runner itself awaits.
+    files: ['tests/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off'
     }
   },
   eslintConfigPrettier

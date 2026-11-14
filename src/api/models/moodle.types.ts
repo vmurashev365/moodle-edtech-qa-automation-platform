@@ -27,6 +27,13 @@ export interface MoodleWebServiceRequest {
   params?: Record<string, string | number | boolean | undefined>;
 }
 
+export interface MoodleWebServiceException {
+  exception: string;
+  errorcode: string;
+  message?: string;
+  debuginfo?: string;
+}
+
 export interface MoodleWebServiceResponse<T> {
   status: number;
   data: T;

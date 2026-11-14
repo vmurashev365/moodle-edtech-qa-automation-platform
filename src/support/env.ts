@@ -1,9 +1,9 @@
 import * as dotenv from 'dotenv';
+import { localDemoUserPassword } from './demo-credentials';
+import { readIntegerEnv } from './env-values';
 import { resolveRuntimeProfile, type TraceMode, type VideoMode } from './runtime-profile';
 
 dotenv.config();
-
-const localDemoUserPassword = 'QaDemo2026!';
 
 export interface TestEnv {
   baseUrl: string;
@@ -23,6 +23,7 @@ export interface TestEnv {
   targetGrade: number;
   courseId: string;
   assignmentId: string;
+  assignmentGradeItemId: string;
   studentId: string;
   submissionId: string;
   courseUrl: string;
@@ -60,16 +61,17 @@ function readSeededUserPassword(name: string): string {
   return value === 'changeme' ? localDemoUserPassword : value;
 }
 
-function readNumber(name: string, fallback: number): number {
-  const value = process.env[name]?.trim();
-
-  if (!value) {
-    return fallback;
-  }
-
-  const parsed = Number.parseFloat(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
+// The only definition of "API token configured": a whitespace-only token is not a token. Used by the
+// environment contract, MoodleClient and the data readiness checks so they cannot disagree.
+export function isApiTokenConfigured(token: string | undefined): boolean {
+  return (token ?? '').trim().length > 0;
 }
+
+export const missingApiTokenWarning =
+  'MOODLE_API_TOKEN is not configured; Moodle Web Service mutation and validation helpers remain pending.';
+
+// The seed creates the controlled assignment with a maximum grade of 100 and whole-number grades.
+export const targetGradeRange = { min: 0, max: 100 };
 
 export function loadEnv(): TestEnv {
   const runtimeProfile = resolveRuntimeProfile();
@@ -89,9 +91,10 @@ export function loadEnv(): TestEnv {
     courseName: readEnv('MOODLE_COURSE_NAME', 'QA Automation Demo 101'),
     assignmentName: readEnv('MOODLE_ASSIGNMENT_NAME', 'Essay: Test Automation Strategy'),
     audioResourceName: readEnv('MOODLE_AUDIO_RESOURCE_NAME', 'Sample Listening Task'),
-    targetGrade: readNumber('MOODLE_TARGET_GRADE', 82),
+    targetGrade: readIntegerEnv(process.env, 'MOODLE_TARGET_GRADE', targetGradeRange) ?? 82,
     courseId: readEnv('MOODLE_COURSE_ID', ''),
     assignmentId: readEnv('MOODLE_ASSIGNMENT_ID', ''),
+    assignmentGradeItemId: readEnv('MOODLE_ASSIGNMENT_GRADE_ITEM_ID', ''),
     studentId: readEnv('MOODLE_STUDENT_ID', ''),
     submissionId: readEnv('MOODLE_SUBMISSION_ID', ''),
     courseUrl: readEnv('MOODLE_COURSE_URL', ''),
@@ -100,7 +103,7 @@ export function loadEnv(): TestEnv {
     assignmentGradingUrl: readEnv('MOODLE_ASSIGNMENT_GRADING_URL', ''),
     gradebookUrl: readEnv('MOODLE_GRADEBOOK_URL', ''),
     studentDisplayName: readEnv('MOODLE_STUDENT_DISPLAY_NAME', ''),
-    readyTimeoutMs: readNumber('MOODLE_READY_TIMEOUT_MS', 180000),
+    readyTimeoutMs: readIntegerEnv(process.env, 'MOODLE_READY_TIMEOUT_MS', { min: 1 }) ?? 180000,
     executionProfile: runtimeProfile.name,
     headless: runtimeProfile.headless,
     slowMoMs: runtimeProfile.slowMoMs,
@@ -140,12 +143,8 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
     warnings.push('MOODLE_AUDIO_RESOURCE_NAME is empty; media smoke scenarios will remain blocked.');
   }
 
-  if (!Number.isFinite(env.targetGrade)) {
-    errors.push('MOODLE_TARGET_GRADE must be numeric.');
-  }
-
-  if (!env.apiToken) {
-    warnings.push('MOODLE_API_TOKEN is not configured; mutation and backend reconciliation helpers remain pending.');
+  if (!isApiTokenConfigured(env.apiToken)) {
+    warnings.push(missingApiTokenWarning);
   }
 
   for (const [key, value] of Object.entries({
@@ -179,7 +178,7 @@ export function validateEnvContract(env: TestEnv = loadEnv()): EnvValidationResu
       gradingNavigationConfigured: Boolean(env.assignmentGradingUrl || env.assignmentId || env.assignmentUrl),
       studentDisplayNameConfigured: Boolean(env.studentDisplayName),
       readyTimeoutMs: env.readyTimeoutMs,
-      apiTokenConfigured: Boolean(env.apiToken),
+      apiTokenConfigured: isApiTokenConfigured(env.apiToken),
       executionProfile: env.executionProfile,
       headless: env.headless,
       slowMoMs: env.slowMoMs,

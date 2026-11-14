@@ -13,26 +13,53 @@ on:
           - local-smoke
           - local-teacher-workflow
           - local-grading
+          - local-security
+          - local-all
           - local-demo-screencast-all
+      iterations:
+        description: Runs of the suite on the same stack; only the first run seeds
+        required: true
+        default: '1'
+        type: choice
+        options:
+          - '1'
+          - '2'
+          - '3'
+          - '4'
+          - '5'
+      publish_release:
+        description: Publish the evidence as a GitHub prerelease if every iteration passed (local suites only)
+        required: true
+        default: false
+        type: boolean
       send_email:
         description: Send stakeholder email digest when SMTP secrets are configured
         required: true
         default: false
         type: boolean
 
+permissions:
+  contents: read
+
+# Credentials of the throwaway CI stack. Workflow-level so the secret guard in both jobs scans for the
+# same values; the DB passwords are set explicitly instead of relying on the compose defaults.
+env:
+  MOODLE_ADMIN_USERNAME: admin
+  MOODLE_ADMIN_PASSWORD: changeme
+  MOODLE_MANAGER_PASSWORD: changeme
+  MOODLE_DB_PASSWORD: changeme
+  MOODLE_DB_ROOT_PASSWORD: changeme
+  MOODLE_API_TOKEN: ''
+
 jobs:
   run-selected-suite:
-    name: Run ${{ inputs.suite }}
+    name: Run ${{ inputs.suite }} x${{ inputs.iterations }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      MOODLE_ADMIN_USERNAME: admin
-      MOODLE_ADMIN_PASSWORD: changeme
       MOODLE_TEACHER_USERNAME: teacher.qa
       MOODLE_STUDENT_USERNAME: student.qa
       MOODLE_MANAGER_USERNAME: manager.qa
-      MOODLE_MANAGER_PASSWORD: changeme
-      MOODLE_API_TOKEN: ''
       MOODLE_COURSE_NAME: 'QA Automation Demo 101'
       MOODLE_ASSIGNMENT_NAME: 'Essay: Test Automation Strategy'
       MOODLE_AUDIO_RESOURCE_NAME: 'Sample Listening Task'
@@ -69,13 +96,16 @@ jobs:
         if: inputs.suite != 'fast-api'
         run: npm run moodle:wait
 
-      - name: Run selected suite with Allure report
+      - name: Run selected suite iterations with Allure report
         id: run_suite
         shell: bash
+        env:
+          SUITE: ${{ inputs.suite }}
+          ITERATIONS: ${{ inputs.iterations }}
         run: |
           set +e
 
-          if [[ "${{ inputs.suite }}" != "fast-api" ]]; then
+          if [[ "$SUITE" != "fast-api" ]]; then
             # Local Moodle suites must use generated seed metadata from .env, not stale job-level values.
             unset MOODLE_BASE_URL
             unset MOODLE_COURSE_ID
@@ -91,31 +121,32 @@ jobs:
             unset MOODLE_STUDENT_PASSWORD
           fi
 
-          case "${{ inputs.suite }}" in
-            fast-api)
-              npm run test:fast:api:report
-              ;;
-            local-smoke)
-              npm run test:fast:smoke:report
-              ;;
-            local-teacher-workflow)
-              npm run test:fast:teacher-workflow:report
-              ;;
-            local-grading)
-              npm run test:fast:grading:report
-              ;;
-            local-demo-screencast-all|local-grading-screencast)
-              MOODLE_HEADLESS=true npm run test:demo:screencast:all
-              ;;
-            *)
-              echo "Unknown suite: ${{ inputs.suite }}"
-              exit 1
-              ;;
-          esac
+          # Seeds before iteration 1 (local suites), runs every iteration, reads the Moodle release and
+          # image digest from the running stack, generates the Allure report and writes the job summary.
+          npm run ci:moodle-suite -- --suite "$SUITE" --iterations "$ITERATIONS"
 
           status=$?
           echo "status=$status" >> "$GITHUB_OUTPUT"
           exit "$status"
+
+      # Built on every passed local run, so a trial dispatch with publish_release=false shows exactly
+      # what a release would contain. Nothing is uploaded before the secret guard passes.
+      - name: Build release assets
+        if: inputs.suite != 'fast-api'
+        run: npm run evidence:package
+
+      - name: Scan release assets for secrets
+        if: inputs.suite != 'fast-api'
+        run: npm run evidence:secret-guard
+
+      - name: Upload release assets
+        if: inputs.suite != 'fast-api'
+        uses: actions/upload-artifact@v4
+        with:
+          name: moodle-${{ inputs.suite }}-release-assets
+          path: reports/release-assets/
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Write stakeholder email digest
         if: always()
@@ -181,3 +212,75 @@ jobs:
       - name: Stop local Moodle
         if: always() && inputs.suite != 'fast-api'
         run: docker compose down -v
+
+  publish-release:
+    name: Publish evidence release
+    needs: run-selected-suite
+    # Only after the whole suite job succeeded, and only when asked for. fast-api has no Moodle stack,
+    # so its evidence cannot carry the controlled-Moodle facts the release notes state.
+    if: success() && inputs.publish_release && inputs.suite != 'fast-api'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download release assets
+        uses: actions/download-artifact@v4
+        with:
+          name: moodle-${{ inputs.suite }}-release-assets
+          path: reports/release-assets
+
+      # Same scan as in the suite job, on the files about to be uploaded. The seeded teacher and
+      # student passwords come from apply-seed-env, which the guard covers through the demo password.
+      - name: Scan release assets for secrets
+        run: npm run evidence:secret-guard
+
+      # A prerelease under an evidence-* tag, never marked latest, so it cannot be taken for a product
+      # version. The tag is unique per run and attempt and points at the commit that was tested.
+      - name: Create evidence prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          SUITE: ${{ inputs.suite }}
+          TAG: evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          TARGET_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+
+          notes=reports/release-assets/release-notes.md
+          assets=()
+          for file in reports/release-assets/*; do
+            if [[ "$file" != "$notes" ]]; then
+              assets+=("$file")
+            fi
+          done
+
+          if [[ ! -f "$notes" || ${#assets[@]} -eq 0 ]]; then
+            echo "Release notes or assets are missing; nothing was published." >&2
+            exit 1
+          fi
+
+          gh release create "$TAG" "${assets[@]}" \
+            --target "$TARGET_SHA" \
+            --prerelease \
+            --latest=false \
+            --title "Evidence: ${SUITE} (run ${GITHUB_RUN_ID}, attempt ${GITHUB_RUN_ATTEMPT})" \
+            --notes-file "$notes"
+
+          echo "Published $(gh release view "$TAG" --json url --jq .url)" >> "$GITHUB_STEP_SUMMARY"
