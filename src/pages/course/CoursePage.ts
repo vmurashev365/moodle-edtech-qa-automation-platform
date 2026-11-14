@@ -1,21 +1,8 @@
 import type { Locator } from '@playwright/test';
-import type { TestEnv } from '../../support/env';
-import { resolveCourseUrl } from '../../support/data-readiness';
 import { uiExpect } from '../../support/ui-expect';
 import { BasePage } from '../base/BasePage';
 
 export class CoursePage extends BasePage {
-  async openControlledCourse(env: TestEnv): Promise<void> {
-    const courseUrl = resolveCourseUrl(env);
-
-    if (!courseUrl) {
-      throw new Error('Controlled course navigation is not configured. Set MOODLE_COURSE_ID or MOODLE_COURSE_URL.');
-    }
-
-    await this.gotoUrl(courseUrl);
-    await this.expectCourseContext(env.courseName);
-  }
-
   async openCourse(courseName: string): Promise<void> {
     const courseLink = this.controlledCourseLink(courseName);
 

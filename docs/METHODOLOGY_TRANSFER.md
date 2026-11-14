@@ -2,7 +2,7 @@
 
 These are portfolio implementations demonstrating QA methodology transferability across structurally different domains.
 
-This public document references only repository evidence intended to be accessible for review. Private/local reference implementations may be used internally as pattern sources, but they are not listed as public evidence.
+This public document references only repository evidence intended to be accessible for review.
 
 | Portfolio implementation                                                                                | Repository                             | Domain          | Controlled platform                       | Core workflows                                               | Main risks covered                                                             | Shared QA methodology                                                       |
 | ------------------------------------------------------------------------------------------------------- | -------------------------------------- | --------------- | ----------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
@@ -14,7 +14,7 @@ Shared methodology (core)
 1. Domain risk analysis
 2. Controlled test environment (deterministic seed data)
 3. Business-critical workflow mapping (scenarios)
-4. BDD Lego Steps (Atomic → Domain → Composite)
+4. BDD Lego Steps: a reusable, reviewed step vocabulary (this repository uses one layer of domain steps; see [BDD Architecture](BDD_ARCHITECTURE.md))
 5. Playwright + TypeScript automation layer implemented after design approval
 6. API / UI validation and reconciliation checks
 7. Allure / CI evidence publication

@@ -1,14 +1,13 @@
-@e2e @web @teacher @assignment @controlled-moodle @local @phase5 @ungraded-baseline
+@e2e @web @teacher @assignment @controlled-moodle @local @phase5
 Feature: Teacher dashboard assignment review
-  The teacher should be able to click from the dashboard through My courses, the course and the assignment
-  to the deterministic student's submission in the grading interface.
+  A teacher must be able to get from the dashboard to a student's submitted work by clicking through
+  My courses, the course and the assignment.
 
-  Scenario: Teacher navigates from the dashboard to the deterministic submission ready for grading
-    Given the controlled Moodle instance is available
-    And controlled Moodle test data exists
-    When I log in as the configured teacher user
-    And I open My courses from the dashboard
-    And I open the controlled course from My courses
-    And I open the controlled assignment from the course page
-    And I open the grading interface from the assignment page
-    Then I should see the deterministic student submission
+  Scenario: A teacher reaches a student's submission from the dashboard
+    Given teacher "teacher.qa" is signed in
+    And student "student.qa" has an ungraded submission for "Essay: Test Automation Strategy"
+    When the teacher opens "My courses" from the dashboard
+    And the teacher opens course "QA Automation Demo 101"
+    And the teacher opens assignment "Essay: Test Automation Strategy"
+    And the teacher opens grading for the assignment
+    Then the teacher sees the submission from student "student.qa" as submitted and not graded

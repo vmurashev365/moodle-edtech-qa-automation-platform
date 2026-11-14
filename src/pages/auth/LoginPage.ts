@@ -1,8 +1,11 @@
 import type { Locator } from '@playwright/test';
-import type { TestEnv } from '../../support/env';
 import { uiExpect } from '../../support/ui-expect';
-import { authLegacySelectors } from '../../ui-map/auth.selectors';
 import { BasePage } from '../base/BasePage';
+
+// Moodle's own login error box.
+const loginErrorSelector = '#loginerrormessage, .loginerrors, .alert-danger';
+// core/togglesensitive wraps the password input in this container once it has replaced it.
+const passwordToggleWrappedFieldSelector = '.toggle-sensitive-wrapper #password';
 
 export class LoginPage extends BasePage {
   async open(): Promise<void> {
@@ -14,12 +17,6 @@ export class LoginPage extends BasePage {
     await uiExpect(this.usernameField(), 'Expected Moodle login username field to be visible.').toBeVisible();
     await uiExpect(this.passwordField(), 'Expected Moodle login password field to be visible.').toBeVisible();
     await uiExpect(this.submitAction(), 'Expected Moodle login submit action to be visible.').toBeVisible();
-  }
-
-  async signInAs(role: 'teacher' | 'student' | 'manager' | 'admin', env: TestEnv): Promise<void> {
-    const credentials = this.credentialsFor(role, env);
-
-    await this.login(credentials.username, credentials.password);
   }
 
   async login(username: string, password: string): Promise<void> {
@@ -44,7 +41,7 @@ export class LoginPage extends BasePage {
         'Expected Moodle to show an authenticated user menu after login.'
       ).toBeVisible();
     } catch {
-      const loginError = this.page.locator(authLegacySelectors.loginPage.loginError).first();
+      const loginError = this.page.locator(loginErrorSelector).first();
       // Short optional read for Moodle's own login error. Assertion timing stays centralized in uiExpect.
       const errorText = (await loginError.textContent({ timeout: 1000 }).catch(() => undefined))?.trim();
 
@@ -84,12 +81,21 @@ export class LoginPage extends BasePage {
     }
   }
 
+  // The name the user menu carries, for comparison evidence. null: no user menu, or it names nobody.
+  async readSignedInUserName(): Promise<string | null> {
+    return this.readAttribute(this.userMenuToggle().getByRole('img').first(), 'aria-label');
+  }
+
+  isOnLoginPage(): boolean {
+    return new URL(this.page.url()).pathname.endsWith('/login/index.php');
+  }
+
   // Moodle sends signed-out users to /login/index.php, where teacher-only controls are absent as well, so a
   // missing control proves nothing unless this holds.
   expectNotOnLoginPage(): void {
     const currentUrl = this.page.url();
 
-    if (new URL(currentUrl).pathname.endsWith('/login/index.php')) {
+    if (this.isOnLoginPage()) {
       throw new Error(
         `Expected a signed-in Moodle page, but Moodle redirected to its login page (${currentUrl}), so no user is signed in.`
       );
@@ -114,7 +120,7 @@ export class LoginPage extends BasePage {
     }
 
     await uiExpect(
-      this.page.locator(authLegacySelectors.loginPage.passwordToggleWrappedField),
+      this.page.locator(passwordToggleWrappedFieldSelector),
       'Expected Moodle password visibility toggle to finish replacing the password field before typing.'
     ).toBeAttached();
   }
@@ -126,28 +132,6 @@ export class LoginPage extends BasePage {
         message: 'Expected the Moodle password field to keep the typed password until the form is submitted.'
       })
       .toBe(true);
-  }
-
-  private credentialsFor(
-    role: 'teacher' | 'student' | 'manager' | 'admin',
-    env: TestEnv
-  ): {
-    username: string;
-    password: string;
-  } {
-    if (role === 'teacher') {
-      return { username: env.teacherUsername, password: env.teacherPassword };
-    }
-
-    if (role === 'student') {
-      return { username: env.studentUsername, password: env.studentPassword };
-    }
-
-    if (role === 'manager') {
-      return { username: env.managerUsername, password: env.managerPassword };
-    }
-
-    return { username: env.adminUsername, password: env.adminPassword };
   }
 
   private usernameField(): Locator {

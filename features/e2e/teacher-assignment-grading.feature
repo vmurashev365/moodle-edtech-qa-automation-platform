@@ -1,13 +1,11 @@
-@e2e @teacher @student @assignment @gradebook @controlled-moodle @local @phase6 @ungraded-baseline
+@e2e @teacher @student @assignment @gradebook @controlled-moodle @local @phase6
 Feature: Teacher assignment grading
-  The controlled Moodle workflow should protect grade save and gradebook reconciliation.
+  A grade that a teacher saves for a student's submission must reach the gradebook unchanged.
 
-  Scenario: Teacher grades deterministic student submission and gradebook reflects grade
-    Given the controlled Moodle instance is available
-    And controlled Moodle grading test data exists
-    When I log in as the configured teacher user
-    And I open the controlled assignment grading interface
-    And I grade the deterministic student submission with the target grade
-    And I open the controlled gradebook
-    Then the gradebook should show the target grade for the deterministic student
-    And Moodle should store the target grade for the deterministic student
+  Scenario: A grade saved by the teacher reaches the gradebook unchanged
+    Given teacher "teacher.qa" is signed in
+    And student "student.qa" has an ungraded submission for "Essay: Test Automation Strategy"
+    When the teacher grades the submission from student "student.qa" as "82"
+    And the teacher opens the gradebook for "QA Automation Demo 101"
+    Then the gradebook shows "82.00" for student "student.qa"
+    And the grade recorded for student "student.qa" is "82" in both the assignment and the gradebook

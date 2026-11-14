@@ -44,6 +44,7 @@
     "test:fast:teacher-workflow:report": "ts-node scripts/run-with-allure-report.ts test:fast:teacher-workflow",
     "test:fast:grading:report": "ts-node scripts/run-with-allure-report.ts test:fast:grading",
     "install:browsers": "playwright install chromium",
+    "test:unit": "node --require ts-node/register --test \"tests/unit/**/*.spec.ts\"",
     "type-check": "tsc --noEmit",
     "lint": "eslint .",
     "format": "prettier --check .",

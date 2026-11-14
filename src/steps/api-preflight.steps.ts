@@ -1,8 +1,8 @@
 import { Given, Then, When } from '@cucumber/cucumber';
-import type { MoodleWorld } from '../../support/custom-world';
-import { isApiTokenConfigured, missingApiTokenWarning } from '../../support/env';
-import { assertEquals, assertTrue } from '../../utils/assertions';
-import { attachJson } from '../../utils/evidence';
+import type { MoodleWorld } from '../support/custom-world';
+import { isApiTokenConfigured, missingApiTokenWarning } from '../support/env';
+import { assertEquals, assertTrue } from '../utils/assertions';
+import { attachJson } from '../utils/evidence';
 
 Given('the controlled Moodle environment configuration is loaded', async function (this: MoodleWorld) {
   const validation = this.moodleClient.validateConfiguration();

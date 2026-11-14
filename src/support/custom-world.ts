@@ -4,7 +4,9 @@ import path from 'node:path';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { browserContextOptions, browserLaunchOptions } from '../../playwright.config';
 import { MoodleClient } from '../api/clients/MoodleClient';
-import type { GradingServiceResponse } from '../pages/assignment/AssignmentPage';
+import type { AssignmentEntity, EntityRegistry, UserEntity } from '../domain/controlled-entities';
+import type { GradingRequestResponse } from '../domain/access-comparison';
+import { loadEntityRegistry } from './entity-registry';
 import type { EnvValidationResult, TestEnv } from './env';
 import { loadEnv } from './env';
 import type { GradeStateResult } from './grade-state';
@@ -16,9 +18,19 @@ export interface ApiPreflightState {
 }
 
 export interface RoleAccessState {
-  graderResponseStatus?: number;
-  gradeStateBefore?: GradeStateResult;
-  gradingServiceResponse?: GradingServiceResponse;
+  gradingPageStatus?: number;
+  gradingRequestResponse?: GradingRequestResponse;
+}
+
+// The submission a scenario is about, set by the Given step that establishes it. Later steps that say
+// "the submission" or "the gradebook shows ..." refer to it.
+export interface SubmissionInFocus {
+  student: UserEntity;
+  assignment: AssignmentEntity;
+  // The text the student handed in, as seeded.
+  text: string;
+  // What Moodle stored when the scenario established the submission: not graded.
+  stateBefore: GradeStateResult;
 }
 
 export class MoodleWorld extends World {
@@ -30,13 +42,59 @@ export class MoodleWorld extends World {
   page?: Page;
   apiPreflight: ApiPreflightState = {};
   roleAccess: RoleAccessState = {};
+  submissionInFocus?: SubmissionInFocus;
+  // Set by the sign-in steps after the user menu confirmed who is signed in.
+  signedIn?: UserEntity;
   private tracingStarted = false;
+  private entityRegistry?: EntityRegistry;
 
   constructor(options: IWorldOptions) {
     super(options);
     this.env = loadEnv();
     this.runtimeProfile = resolveRuntimeProfile();
     this.moodleClient = new MoodleClient(this.env);
+  }
+
+  // Loaded on first use, so scenarios that name no seeded entity (API preflight, login smoke) need no seed.
+  get entities(): EntityRegistry {
+    this.entityRegistry ??= loadEntityRegistry();
+
+    return this.entityRegistry;
+  }
+
+  requireSubmissionInFocus(): SubmissionInFocus {
+    if (!this.submissionInFocus) {
+      throw new Error(
+        'This step refers to a submission, but the scenario has not established one. ' +
+          'Start with: Given student "<username>" has an ungraded submission for "<assignment>".'
+      );
+    }
+
+    return this.submissionInFocus;
+  }
+
+  // The submission in focus, provided the step names the student it belongs to.
+  requireSubmissionOf(username: string): SubmissionInFocus {
+    const submission = this.requireSubmissionInFocus();
+
+    if (this.entities.student(username).id !== submission.student.id) {
+      throw new Error(
+        `The scenario established the submission of student "${submission.student.username}", but this step names student "${username}".`
+      );
+    }
+
+    return submission;
+  }
+
+  requireSignedIn(): UserEntity {
+    if (!this.signedIn) {
+      throw new Error(
+        'This step refers to the signed-in user, but nobody has signed in. ' +
+          'Start with: Given teacher "<username>" is signed in, or Given student "<username>" is signed in.'
+      );
+    }
+
+    return this.signedIn;
   }
 
   async initBrowser(): Promise<void> {

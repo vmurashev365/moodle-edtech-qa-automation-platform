@@ -86,7 +86,7 @@ npm run test:demo:grading
 npm run test:demo:screencast:all
 ```
 
-Scenarios that depend on the grading state are tagged `@ungraded-baseline`. A tagged Before hook (`src/support/ungraded-baseline.ts`) runs `scripts/moodle/reset-ungraded-baseline.php` in the Moodle container, resets Student QA's grade to "not graded" with the same assign grading API the seed uses, and fails the scenario if Docker is unavailable or the reset does not take effect. Correctness therefore does not depend on feature file order. The teacher-workflow and grading demo/fast scripts still run `moodle:seed:ready` once per command so the seeded data and `.env` metadata exist.
+Scenarios that depend on the grading state begin with `Given student "…" has an ungraded submission for "…"`. That step (`src/steps/assignment.steps.ts`) runs `scripts/moodle/reset-ungraded-baseline.php` in the Moodle container, resets the student's grade to "not graded" with the same assign grading API the seed uses, reads the state back and fails the scenario if Docker is unavailable or the submission is not ungraded. Correctness therefore does not depend on feature file order. The teacher-workflow and grading demo/fast scripts still run `moodle:seed:ready` once per command so the seeded data and `.env` metadata exist.
 
 Record visible walkthroughs:
 
@@ -133,7 +133,7 @@ The seed runs PHP inside the local Docker Moodle container and uses Moodle inter
 
 `npm run moodle:seed:env` explicitly updates the untracked local `.env` from that generated artifact. If `.env` is missing, it is created from `.env.example`. If `.env` already exists, a timestamped `.env.backup.*` file is created first. The sync updates deterministic Moodle metadata from the generated `envSnippet`, including `MOODLE_STUDENT_ID`, `MOODLE_STUDENT_EMAIL`, `MOODLE_SUBMISSION_ID`, `MOODLE_ASSIGNMENT_GRADE_ITEM_ID`, and `MOODLE_ASSIGNMENT_GRADING_URL`, and preserves unrelated variables and nonblank teacher/student passwords. Blank teacher/student passwords are filled with the documented local-only demo password that satisfies Moodle password policy. Generated URLs use Moodle's configured local `wwwroot` so browser login sessions stay aligned with the running instance.
 
-All container PHP scripts go through `src/support/moodle-cli.ts`, which runs `docker compose exec` as the Bitnami web server user `daemon`. Variables are passed by name only (`-e NAME`) with values in the child process environment, so passwords never appear in command arguments, and failure messages mask secret values. Each call has a time limit (seed 5 minutes, the `@ungraded-baseline` reset 20 seconds, other calls 2 minutes) because the synchronous docker call blocks Cucumber's own timeouts; a timeout fails with "Timed out after N ms". Earlier versions ran the seed as root and could leave root-owned files in `moodledata`, which later breaks Moodle with "Invalid permissions detected when trying to create a directory" or "Unable to acquire a lock for caching". Repair such a volume once with `docker compose exec moodle chown -R daemon:daemon /bitnami/moodledata`, or recreate it with `npm run moodle:reset`.
+All container PHP scripts go through `src/support/moodle-cli.ts`, which runs `docker compose exec` as the Bitnami web server user `daemon`. Variables are passed by name only (`-e NAME`) with values in the child process environment, so passwords never appear in command arguments, and failure messages mask secret values. Each call has a time limit (seed 5 minutes, the ungraded-baseline reset 20 seconds, other calls 2 minutes) because the synchronous docker call blocks Cucumber's own timeouts; a timeout fails with "Timed out after N ms". Earlier versions ran the seed as root and could leave root-owned files in `moodledata`, which later breaks Moodle with "Invalid permissions detected when trying to create a directory" or "Unable to acquire a lock for caching". Repair such a volume once with `docker compose exec moodle chown -R daemon:daemon /bitnami/moodledata`, or recreate it with `npm run moodle:reset`.
 
 `npm run moodle:seed:auth` verifies the seeded teacher and student credentials through Moodle's CLI authentication path. It runs after `.env` sync inside `npm run moodle:seed:ready` so a bad seeded password fails before browser UI steps.
 
@@ -172,9 +172,9 @@ Before running the grading scenario as evidence, confirm:
 - `MOODLE_ASSIGNMENT_SUBMISSIONS_URL` or `MOODLE_ASSIGNMENT_ID`/`MOODLE_ASSIGNMENT_URL` is configured
 - `MOODLE_ASSIGNMENT_GRADING_URL` or enough assignment/student metadata to derive it is configured
 - `MOODLE_GRADEBOOK_URL`, `MOODLE_COURSE_ID`, or `MOODLE_COURSE_URL` is configured
-- assignment grade scale accepts `MOODLE_TARGET_GRADE`, default `82`
+- assignment grade scale accepts the grade written in the grading scenario (`82`) and `MOODLE_TARGET_GRADE`, default `82`
 - seed reset leaves Student QA grading baseline as not graded
-- the UI scenario saves the target grade and gradebook displays it for `MOODLE_STUDENT_DISPLAY_NAME`
+- the UI scenario saves the grade written in the feature file and the gradebook displays it for the student named there; the names are resolved from `artifacts/seed/controlled-data.generated.json`
 - `scripts/moodle/read-grade-state.php` (read-only, run as `daemon` with a 20-second limit) reports the same grade for the assignment and the gradebook
 
 The seed does not pre-grade the submission with the target grade. It resets the controlled grade to Moodle's ungraded baseline through the assign grading API so the UI scenario must perform the write. Do not treat the generated local artifact as gradebook evidence.
@@ -332,7 +332,7 @@ The commands above exclude `@wip`. Every executable suite command (`test:*`, inc
 
 `test:local:teacher-workflow` is local-only and requires the controlled seed checklist above. If data is missing, the scenario should fail with a setup blocker rather than pass.
 
-`test:local:security` is local-only and requires `npm run moodle:seed:ready`. A signed-in Student QA opens the single-user grading URL; the scenario requires Moodle's `error/nopermission` page with HTTP 404 while the student is still signed in, and only then checks that no grade input or Save changes action is present. A redirect to the login page or another signed-in user fails it. A second scenario (`@ungraded-baseline`, needs Docker for the Moodle CLI) has the student send the grading panel's Save changes request (`mod_assign_submit_grading_form`) with the student's own session key; it requires errorcode `nopermissions` for `mod/assign:grade` and a stored grade that is still not graded and unchanged.
+`test:local:security` is local-only and requires `npm run moodle:seed:ready`. A signed-in Student QA opens the single-user grading URL; the scenario requires Moodle's `error/nopermission` page with HTTP 404 while the student is still signed in, and only then checks that no grade input or Save changes action is present. A redirect to the login page or another signed-in user fails it. Both scenarios need Docker for the Moodle CLI, which resets and reads the grade. A second scenario has the student send the grading panel's Save changes request (`mod_assign_submit_grading_form`) with the student's own session key; it requires errorcode `nopermissions` for `mod/assign:grade` and a stored grade that is still not graded and unchanged.
 
 `test:local:grading` is local-only. It runs the grading data check, then the guarded Phase 6 selection. After `npm run moodle:seed:ready`, it should select one executable scenario and prove the UI grading, gradebook row verification and Moodle CLI backend reconciliation path.
 
@@ -392,7 +392,7 @@ Inputs:
   - `local-security`: Phase 7 role access (`test:local:security`).
   - `local-all`: every implemented local scenario, headless, no screencast (`test:local:all`).
   - `local-demo-screencast-all`: the local scenarios with screencast video and click visualizer (`test:local:screencast:all`), headless in Actions.
-- `iterations` (1–5, default 1): how many times the suite runs on the same stack. Iteration 1 seeds with `npm run moodle:seed:ready` (local suites only); later iterations do not re-seed and rely on the `@ungraded-baseline` hooks. A seed failure stops the run and marks the remaining iterations as not run.
+- `iterations` (1–5, default 1): how many times the suite runs on the same stack. Iteration 1 seeds with `npm run moodle:seed:ready` (local suites only); later iterations do not re-seed and rely on the Given step that resets a submission to ungraded. A seed failure stops the run and marks the remaining iterations as not run.
 - `publish_release` (default `false`): publish the evidence as a GitHub prerelease. See below.
 - `send_email`: see below.
 

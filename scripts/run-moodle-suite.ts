@@ -28,7 +28,7 @@ import {
 } from './lib/evidence-run';
 
 // What the Manual Moodle Test Run workflow runs: one suite, N times on the same stack. Iteration 1
-// seeds; later iterations rely on the @ungraded-baseline hooks. Every iteration keeps its own Cucumber
+// seeds; later iterations rely on the Given step that resets a submission to ungraded. Every iteration keeps its own Cucumber
 // JSON and Allure results, and any failing iteration fails the command.
 
 function usage(): string {

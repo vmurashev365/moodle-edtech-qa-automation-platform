@@ -65,7 +65,7 @@ Each run uses a fresh controlled local Docker Moodle seeded with deterministic d
 ## Phase 5 local teacher workflow
 
 - Controlled data readiness check: Ready with `npm run check:data`
-- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data; navigates by clicks from Dashboard through My courses, course, assignment and `Grade` (no direct course or assignment URLs)
+- Teacher submission-review workflow: Implemented with `npm run test:local:teacher-workflow`; requires seeded local Moodle data; navigates by clicks from Dashboard through My courses, course, assignment and `Grade` (no direct course or assignment URLs). The teacher, student, course, assignment and menu item are named in the scenario; "Comparison: submission shown on the grading page" lists the student's name and email, both statuses and the submitted text against what the grading page shows
 - Login, dashboard/course, course/assignment, assignment-summary, Grade action, Student QA identity, and submission-status locator contracts: verified from local Mission 1-5 Recorder/Codegen evidence
 - Mission 6 extends the verified controls through grade input, save, and gradebook row checks
 - Seed evidence and public Allure report: TBD
@@ -77,8 +77,10 @@ Each run uses a fresh controlled local Docker Moodle seeded with deterministic d
 - Local grading readiness alias: Ready with `npm run check:local:grading-readiness`
 - Local grading command: `npm run test:local:grading` is guarded against zero-scenario false green results and selects one executable Phase 6 scenario when seeded data is ready
 - Current status: Implemented locally; proof requires `npm run moodle:seed:ready` followed by `npm run test:local:grading`
-- Verified UI behavior: teacher grades Student QA with `MOODLE_TARGET_GRADE`; gradebook row for `MOODLE_STUDENT_ID` shows Student QA and `student.qa@example.test`, and its assignment cell (grade item `MOODLE_ASSIGNMENT_GRADE_ITEM_ID`) equals the formatted target grade exactly; Course total is not accepted as proof
-- Backend reconciliation: the read-only `scripts/moodle/read-grade-state.php` (Moodle CLI) must report assignment grade = gradebook grade = `MOODLE_TARGET_GRADE` with gradebook state `graded`; the state is attached as "Moodle backend grade state (CLI)" JSON. With the `@ungraded-baseline` hook this covers starting state → UI write → stored state
+- Scenario data: the teacher, student, assignment, course and grade are named in the scenario and resolved from the seed artifact (`artifacts/seed/controlled-data.generated.json`); the grade is the `82` written in the scenario, not `MOODLE_TARGET_GRADE`
+- Verified UI behavior: teacher `teacher.qa`, confirmed by the user menu, grades Student QA's submission with `82`; the gradebook row for the student shows Student QA and `student.qa@example.test`, and the cell in the assignment's column equals `82.00` exactly; Course total is not accepted as proof
+- Backend reconciliation: the read-only `scripts/moodle/read-grade-state.php` (Moodle CLI) must report no grade before the teacher grades, and assignment grade = gradebook grade = `82` with gradebook state `graded` afterwards. With the reset in the scenario's `Given` step this covers starting state → UI write → stored state
+- Evidence under each step, on passing runs too: "Comparison: submission is not graded yet", "Comparison: grade shown in the gradebook" and "Comparison: grade stored by Moodle" list every compared value with its source, expected value, actual value and result; the raw CLI state is attached as "Moodle backend grade state before grading (CLI)" and "… after grading (CLI)". The steps assert from the same records, and the comparison logic has unit tests (`npm run test:unit`)
 - API status: API coverage remains preflight/helper-level; the backend check above is not Web Services coverage, and missing token warnings are non-blocking
 - Public Allure report/demo evidence: TBD
 
@@ -87,6 +89,7 @@ Each run uses a fresh controlled local Docker Moodle seeded with deterministic d
 - Local command: `npm run test:local:security` is guarded against zero-scenario false green results
 - Verified UI behavior: Student QA, confirmed by the user menu, opens `action=grader&userid=<MOODLE_STUDENT_ID>` and gets Moodle's `error/nopermission` error (errorcode `nopermission`, HTTP 404). The capability check is `mod/assign:viewgrades` or `mod/assign:grade` (`assign::require_view_grades()`); the page does not name it. The page must not be the login page, and only after the error is visible may the `Grade out of` input and `Save changes` action be absent
 - Service-level attempt: from the student's page and with the student's session key, the request the grading panel sends on Save changes (`mod_assign_submit_grading_form`, assign instance id from the CLI) is refused with errorcode `nopermissions`, "Sorry, but you do not currently have permissions to do that (Grade assignment)." (`mod/assign:grade`, checked by `assign::save_grade()`). The identical request sent by the teacher saves the grade, and a wrong instance id or an invalid grade is reported as not a permission error. The CLI grade state before and after is attached and must be not graded and unchanged
+- Evidence under each step, on passing runs too: "Comparison: grading page is refused" (signed-in user, page reached, HTTP status, Moodle error, absence of grading controls), "Comparison: grading request is refused" (HTTP status, outcome, error code, error message) and "Comparison: submission is still not graded"; the grade in the request is the `82` written in the scenario
 - Follow-ups: the submissions table (`action=grading`) and the gradebook grader report have no role-negative check yet
 - Public Allure report: TBD
 

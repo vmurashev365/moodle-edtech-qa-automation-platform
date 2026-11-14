@@ -2,6 +2,7 @@ import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { localDemoUserPassword } from '../src/support/demo-credentials';
+import { seedArtifactPath } from '../src/support/entity-registry';
 import { logger } from '../src/utils/logger';
 
 interface SeedArtifact {
@@ -46,7 +47,6 @@ interface EnvLine {
   value?: string;
 }
 
-const seedArtifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
 const envPath = path.resolve('.env');
 const envExamplePath = path.resolve('.env.example');
 

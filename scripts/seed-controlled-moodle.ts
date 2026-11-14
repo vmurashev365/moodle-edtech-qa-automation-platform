@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 import { localDemoUserPassword } from '../src/support/demo-credentials';
+import { seedArtifactPath as artifactPath } from '../src/support/entity-registry';
 import { loadEnv } from '../src/support/env';
 import { requireDocker, requireRunningMoodleService, runMoodleCliScript } from '../src/support/moodle-cli';
 import { logger } from '../src/utils/logger';
@@ -56,7 +57,6 @@ interface SeedOutput {
 }
 
 const seedScriptPath = '/qa-seed/seed-controlled-data.php';
-const artifactPath = path.resolve('artifacts', 'seed', 'controlled-data.generated.json');
 const seedTimeoutMs = 300_000;
 
 function buildSeedEnv(): Record<string, string> {
