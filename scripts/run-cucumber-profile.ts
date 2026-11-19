@@ -142,7 +142,7 @@ async function main(): Promise<void> {
 
   // Load .env without overriding the outer environment, exactly as the Cucumber child process will,
   // so the snapshot describes the profile the browser actually runs with.
-  dotenv.config();
+  dotenv.config({ quiet: true });
   const runEnv = buildEnv(parsed.executionProfile, parsed.screencast, parsed.headlessOverride);
   const runtimeProfile = resolveRuntimeProfile(runEnv);
   writeRuntimeProfileSnapshot(runtimeProfile);

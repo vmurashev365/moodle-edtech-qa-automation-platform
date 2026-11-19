@@ -1,7 +1,7 @@
 import * as dotenv from 'dotenv';
 import { cleanEnvValue, readBooleanEnv, readChoiceEnv, readIntegerEnv } from './env-values';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export type ExecutionProfileName = 'demo' | 'fast';
 export type TraceMode = 'off' | 'retain-on-failure' | 'on';

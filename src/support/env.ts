@@ -3,7 +3,7 @@ import { localDemoUserPassword } from './demo-credentials';
 import { readIntegerEnv } from './env-values';
 import { resolveRuntimeProfile, type TraceMode, type VideoMode } from './runtime-profile';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 export interface TestEnv {
   baseUrl: string;
